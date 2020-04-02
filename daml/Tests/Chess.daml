@@ -6,7 +6,7 @@ module Tests.Chess where
 
 import DA.Assert
 
-import Init
+import Tests.Init
 import Types
 
 testEnum = scenario do

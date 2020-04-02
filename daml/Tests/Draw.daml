@@ -6,7 +6,7 @@ module Tests.Draw where
 
 import Types
 import Chess
-import Init
+import Tests.Init
 
 claimDraw party operator operatorRole game = do
   case game of

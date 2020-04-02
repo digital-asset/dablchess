@@ -4,7 +4,7 @@
 daml 1.2
 module Tests.All where
 
-import Init()
+import Tests.Init()
 import Tests.Chess()
 import Tests.Draw()
 import Tests.Moves()
