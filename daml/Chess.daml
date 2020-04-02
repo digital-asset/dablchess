@@ -57,7 +57,7 @@ template Game
     key (operator, gameId) : (Party, GameId)
     maintainer key._1
     controller operator can
-      nonconsuming Begin : GameContractIds
+      nonconsuming Begin : (ContractId ActiveSideOfGame, ContractId PassiveSideOfGame, ContractId OperatorRole)
         do
           let (activeSide, passiveSide) =
                 case desiredSide of
@@ -76,7 +76,8 @@ template Game
                           passive = Rules.Data.initSplitState Black
                           side = Black
                           ..
-          return (activeId, passiveId)
+          gameRoleId <- create OperatorRole with ..
+          return (activeId, passiveId, gameRoleId)
 
       End : ContractId GameResult
         with
