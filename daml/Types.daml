@@ -1,0 +1,103 @@
+-- Copyright (c) 2019 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Types where
+
+import DA.Next.Map qualified as M
+
+data PieceType =
+  Pawn | Rook | Knight | Bishop | Queen | King
+    deriving (Eq, Show, Ord)
+
+data Side =
+  Black | White
+    deriving (Eq, Show, Ord)
+
+opposite : Side -> Side
+opposite White = Black
+opposite Black = White
+
+data Coord = A1 | A2 | A3 | A4 | A5 | A6 | A7 | A8
+           | B1 | B2 | B3 | B4 | B5 | B6 | B7 | B8
+           | C1 | C2 | C3 | C4 | C5 | C6 | C7 | C8
+           | D1 | D2 | D3 | D4 | D5 | D6 | D7 | D8
+           | E1 | E2 | E3 | E4 | E5 | E6 | E7 | E8
+           | F1 | F2 | F3 | F4 | F5 | F6 | F7 | F8
+           | G1 | G2 | G3 | G4 | G5 | G6 | G7 | G8
+           | H1 | H2 | H3 | H4 | H5 | H6 | H7 | H8
+    deriving (Eq, Show, Ord, Enum)
+
+instance M.MapKey Coord where
+  keyToText c = M.keyToText $ fromEnum c
+  keyFromText t = toEnum $ M.keyFromText t
+
+data Piece = Piece with
+  coord : Coord
+  tp : PieceType
+  owner : Side
+  moved : Bool
+    deriving (Eq, Show, Ord)
+
+data EverCheck = EverCheck with
+  white : Bool
+  black : Bool
+    deriving (Eq, Show)
+
+data ChessMove = ChessMove with
+  from : Coord
+  to : Coord
+  by : Side
+  promote : Optional PieceType
+    deriving (Eq, Show)
+
+type PieceMap = M.Map Coord Piece
+
+data GameState = GameState with
+  side : Side                 -- who's turn is it
+  pieces : PieceMap           -- pieces on the board.
+  inCheck : Bool              -- if side to move is in check  ... (in fog of war reveal the attacking piece?)
+  everCheck : EverCheck       -- has either side been checked
+  moves : [ChessMove]         -- stack of list moves
+    deriving (Eq, Show)
+
+-- this is a bit naive at-the-moment, in real fog-of-war white would be able to see black pieces that it is threatening.
+splitGameStateOfSide : Side -> GameState -> GameState
+splitGameStateOfSide side gs =
+  gs with
+    inCheck = if side == gs.side then gs.inCheck else False
+    pieces = M.filter (\ p -> p.owner == side) gs.pieces
+    moves = filter (\m -> m.by == side) gs.moves
+
+mergeMoves acc (w::ws) (b::bs) = mergeMoves (b::(w::acc)) ws bs
+mergeMoves acc [w]     []      = (w :: acc) -- white may have an extra move
+mergeMoves acc []      []      = acc
+mergeMoves _   _       _       = error "More black moves than white ones!"
+
+joinGameStates : GameState -> GameState -> GameState
+joinGameStates ws bs =
+  if ws.side /= bs.side then
+    error "We can't disagree about who's turn it is to move"
+  else
+    ws with
+      inCheck = if ws.side == White then ws.inCheck else bs.inCheck
+      pieces = M.union ws.pieces bs.pieces
+      moves = mergeMoves [] (reverse ws.moves) (reverse bs.moves)
+
+data DrawType
+  = PlayerDraw Side
+  | Stalemate
+  | ThreefoldRepetition
+  | FiftyMoveRule
+    deriving (Eq, Show)
+
+data DrawOrWinner a
+  = Draw DrawType
+  | Winner a
+    deriving (Eq, Show)
+
+data MoveResult
+  = DrawOrWinner (DrawOrWinner Side)
+  | NewState GameState
+  | Error Text
+    deriving (Eq, Show)

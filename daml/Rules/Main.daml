@@ -1,0 +1,23 @@
+-- Copyright (c) 2019 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Rules.Main where
+
+import Types
+
+import Rules.Moves qualified as Moves
+import Rules.States qualified as States
+
+-- | Apply a ChessMove to a GameState.
+tryMove : GameState -> ChessMove -> MoveResult
+tryMove state mv =
+  case Moves.legal state mv of
+    Left e -> Error e
+    Right ns ->
+      if States.inCheckMate ns
+      then DrawOrWinner $ Winner state.side
+      else if States.inStaleMate ns
+           then DrawOrWinner $ Draw Stalemate
+           else NewState ns
+

@@ -1,0 +1,105 @@
+-- Copyright (c) 2019 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.Draw where
+
+import Types
+import Chess
+import Init
+
+claimDraw party operator operatorRole game = do
+  case game of
+    Right (a,_) -> do
+      _moveId <- submit party do exercise a ClaimDraw
+      submit operator do exercise operatorRole AdvancePlay
+    Left _ -> abort "Should be in play"
+
+testThreeRepeat = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+  sameGame <- claimDraw white operator operatorRole game
+  assertMsg "Invalid attempt to claim a draw " (game == sameGame)
+
+  let
+    moves = [ (A2, A4)
+            , (A7, A5)
+            -- (1) Move the A column rooks forward and back.
+            , (A1, A3)
+            , (A8, A6)
+            , (A3, A1)
+            , (A6, A8)
+            -- (2)
+            , (A1, A3)
+            , (A8, A6)
+            , (A3, A1)
+            , (A6, A8)
+            -- (3)
+            , (A1, A3)
+            , (A8, A6)
+            , (A3, A1)
+            , (A6, A8)
+            ]
+    moves' = orderedCoordsToMoves white black moves
+  game <- foldl submitMove (return game) moves'
+
+  draw <- claimDraw white operator operatorRole game
+
+  gameResult <- case draw of
+    Right _ -> abort "Should be a draw"
+    Left gId -> do
+      submit white do fetch gId
+
+  assert (gameResult.drawOrWinner == Draw ThreefoldRepetition)
+
+testFiftyMove = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  sameGame <- claimDraw white operator operatorRole game
+  assertMsg "Invalid attempt to claim a draw does not advance play" (game == sameGame)
+
+  let
+    moves = [ (A2, A4)
+            , (A7, A5)
+            ] ++
+            (join (replicate 11 [ (A1, A3)
+                                , (A8, A6)
+                                , (A3, A1)
+                                , (A6, A8)
+                                ])) ++
+            [ (A1, A3)
+            , (A8, A6)
+            , (A3, B3)
+            ]
+    moves' = orderedCoordsToMoves white black moves
+
+  game <- foldl submitMove (return game) moves'
+
+  draw <- claimDraw black operator operatorRole game
+--  assertMsg "Invalid attempt to claim a draw does not advance play" (game == sameGame)
+
+ -- let drawingMove =
+  --      ChessMove with
+   --       from = A6
+    --      to = A8
+     --     by = Black
+      --    promote = None
+       --   check = None
+
+--  game <- submitMove (return game) (black, drawingMove)
+
+ -- draw <- claimDraw white operator operatorRole game
+
+  gameResult <- case draw of
+    Right _ -> abort "Should be a draw"
+    Left gId -> do
+      submit white do fetch gId
+
+  --assertMsg (show gameResult) (gameResult.drawOrWinner == Draw FiftyMoveRule)
+  -- TODO: Fix this... we give priority to recognizing ThreefoldRepitition and this scenario
+  -- also violatest that rule. We need to encode a game where there is genuine lack of
+  -- advancement over 50 moves and not just repetition.
+  assert (gameResult.drawOrWinner == Draw ThreefoldRepetition)

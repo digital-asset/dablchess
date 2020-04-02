@@ -1,0 +1,173 @@
+-- Copyright (c) 2019 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.SpecialRules where
+
+import DA.Next.Map as M
+--import DA.Either
+import DA.Optional
+
+import Init
+import Types
+
+--import Rules.Data
+
+{- Castling is WIP
+testCastle = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  let castleMove =
+        ChessMove with
+          from = E1
+          to = G1
+          by = White
+          promote = None
+
+  sameGame <- submitMove (return game) (white, castleMove)
+  assertMsg "Invalid move does not advance play" (game == sameGame)
+
+  let
+    moves = [ (G2, G4)
+            , (G7, G6)
+            , (F1, H3)
+            , (G6, G5)
+            , (G1, F3)
+            , (F8, H6)
+            ]
+    moves' = orderedCoordsToMoves white black moves
+  game <- foldl submitMove (return game) moves'
+
+  -- now we can castle
+  kingCastle <- submitMove (return game) (white, castleMove)
+
+  case kingCastle of
+    Right (_, g) -> do
+      kc <- submit white do fetch g
+      let
+        t = do
+          sm <- mapState kc.passive
+          king <- optionalToEither "King position not occupied" $ M.lookup (6,0) sm
+          assertMsg "No King in expected position"
+            (king.tp == King && king.moved)
+          rook <- optionalToEither "Rook position not occupied" $ M.lookup (5,0) sm
+          assertMsg "No Rook in expected position"
+            (rook.tp == Rook && rook.moved)
+      case t of
+        Left e -> abort e
+        Right _ -> assert True
+    Left _ -> abort "Game should be in play"
+    -}
+
+testCheck = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  sameGame <- submitMove (return game) (white, White, E1, G1 )
+  assertMsg "Invalid move does not advance play" (game == sameGame)
+
+  let moves = [ (G2, G4)
+              , (E7, E6)
+              , (F2, F4)
+              ]
+      moves' = orderedCoordsToMoves white black moves
+
+  game <- foldl submitMove (return game) moves'
+  case game of
+    Right (a, _) -> do
+      c <- submit black do fetch a
+      assertMsg "No one has been checked" (not c.active.inCheck
+                                       && (c.active.everCheck == EverCheck { white = False, black = False}))
+    Left _ -> abort "Game should be in play"
+
+  checkmate <- submitMove (return game) (black, Black, D8, H4)
+
+  case checkmate of
+    Right (a, _) -> do
+      abort "Game should be over"
+    Left grId -> do
+      gameResult <- submit white do fetch grId
+      assertMsg "black one." (gameResult.drawOrWinner == Winner black)
+
+
+testEnPassant = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  sameGame <- submitMove (return game) (white, White, B2, C3)
+  assertMsg "Invalid attempt to en-passant does not advance play" (game == sameGame)
+  let moves = [ (B2, B4)
+              , (E7, E6)
+              , (B4, B5)
+              , (C7, C5)
+              ]
+      moves' = orderedCoordsToMoves white black moves
+  game <- foldl submitMove (return game) moves'
+
+  enPassant <- submitMove (return game) (white, White, B5, C6)
+
+  case enPassant of
+    Right (a, _) -> do
+      ac <- submit black do fetch a
+      assertMsg "Black pawn should be gone" (isNone (M.lookup C7 ac.active.pieces))
+    Left _ -> abort "Game should be in play"
+
+{- Still a WIP
+testPromote = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+      invalidPromotion =
+        ChessMove with
+            from = B2
+            to = C3
+            by = White
+            promote = Some Queen
+
+  sameGame <- submitMove (return game) (white, invalidPromotion)
+  assertMsg "Invalid attempt to promite does not advance play" (game == sameGame)
+
+  let
+    moves = [ (A2, A4)
+            , (A7, A5)
+            , (B2, B4)
+            , (A5, B4)
+            , (A4, A5)
+            , (A8, A6)
+            , (C2, C3)
+            , (A6, H6)
+            , (A5, A6)
+            , (H6, G6)
+            , (A6, A7)
+            , (G6, H6)
+            ]
+    moves' = orderedCoordsToMoves white black moves
+  game <- foldl submitMove (return game) moves'
+
+  let validPromotion =
+        ChessMove with
+            from = A7
+            to = A8
+            by = White
+            promote = Some Queen
+
+  promote <- submitMove (return game) (white, validPromotion)
+
+  case promote of
+    Right (_,g) -> do
+      p <- submit white do fetch g
+      let
+        t = do
+          sm <- mapState p.passive
+          queen <- optionalToEither "Queen position not occupied" $ M.lookup (0,7) sm
+          assertMsg ("No Queen in expected position: " <> show queen)
+            (queen.tp == Queen && queen.moved)
+      case t of
+        Left e -> abort e
+        Right _ -> assert True
+    Left _ -> abort "Game should be in play"
+    -}

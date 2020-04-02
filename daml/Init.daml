@@ -1,0 +1,74 @@
+-- Copyright (c) 2019 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Init where
+
+import Chess
+import Types
+
+data InitData = InitData with
+  operatorRole : ContractId OperatorRole
+  gId : ContractId Game
+  activeSideOfGameId : ContractId ActiveSideOfGame
+  passiveSideOfGameId : ContractId PassiveSideOfGame
+  white : Party   -- return these as parties so that the tests are easier to desribe
+  black : Party
+  operator : Party
+  submitMove : Scenario ResultOrNextMove -> (Party, Side, Coord, Coord) -> Scenario ResultOrNextMove
+
+type ResultOrNextMove = Either (ContractId GameResult) GameContractIds
+
+-- Helper to advance play with a move that handles both the player and operators actions
+-- These are used only in the testing scenario's.
+createSubmitMove : Party -> ContractId OperatorRole -> Scenario ResultOrNextMove -> (Party, Side, Coord, Coord) -> Scenario ResultOrNextMove
+createSubmitMove operator operatorRole seg (player, by, from, to) =
+  do
+    eg <- seg
+    case eg of
+      Left _ -> abort "Can't continue won game"
+      Right (activeId, _passive) -> do
+        _moveId <- submit player do
+                    exercise activeId Move with promote = None, ..
+        submit operator do exercise operatorRole AdvancePlay
+
+initData = do
+  let gameId = "Alice (White) vs Bob (Black) "
+  alice <- getParty "Alice"
+  bob <- getParty "Bob"
+  operator <- getParty "Ref"
+
+  gameProposalId <- submit alice do
+    create GameProposal with
+      gameId = gameId
+      proposer = alice
+      desiredSide = White
+      opponent = bob
+      operator
+
+  gameAcceptId <- submit bob do exercise gameProposalId Accept
+  gId <- submit operator do exercise gameAcceptId Start
+  operatorRole <- submit operator do create OperatorRole with ..
+
+  (activeSideOfGameId, passiveSideOfGameId, active, passive) <- submit operator do
+    (activeSideOfGameId, passiveSideOfGameId) <- exercise gId Begin
+    active <- fetch activeSideOfGameId
+    passive <- fetch passiveSideOfGameId
+    return ( activeSideOfGameId, passiveSideOfGameId, active, passive)
+  let white = active.player
+      black = passive.player
+
+  assert (white == alice)
+  assert (black == bob)
+
+  let submitMove = createSubmitMove operator operatorRole
+  return InitData with ..
+
+
+orderedCoordsToMovesInner _  _  acc _  []              = reverse acc
+orderedCoordsToMovesInner wp bp acc by ((from,to)::tl) =
+    let party = if by == White then wp else bp in
+    orderedCoordsToMovesInner wp bp ((party,by,from,to)::acc) (opposite by) tl
+
+orderedCoordsToMoves : Party -> Party -> [(Coord,Coord)] -> [(Party,Side,Coord,Coord)]
+orderedCoordsToMoves wp bp lst = orderedCoordsToMovesInner wp bp [] White lst
