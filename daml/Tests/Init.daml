@@ -48,13 +48,12 @@ initData = do
 
   gameAcceptId <- submit bob do exercise gameProposalId Accept
   gId <- submit operator do exercise gameAcceptId Start
-  operatorRole <- submit operator do create OperatorRole with ..
 
-  (activeSideOfGameId, passiveSideOfGameId, active, passive) <- submit operator do
-    (activeSideOfGameId, passiveSideOfGameId) <- exercise gId Begin
+  (activeSideOfGameId, passiveSideOfGameId, active, passive, operatorRole) <- submit operator do
+    (activeSideOfGameId, passiveSideOfGameId, operatorRole) <- exercise gId Begin
     active <- fetch activeSideOfGameId
     passive <- fetch passiveSideOfGameId
-    return ( activeSideOfGameId, passiveSideOfGameId, active, passive)
+    return ( activeSideOfGameId, passiveSideOfGameId, active, passive, operatorRole)
   let white = active.player
       black = passive.player
 

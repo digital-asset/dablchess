@@ -187,6 +187,10 @@ template Surrender
     key (operator, gameId) : (Party, GameId)
     maintainer key._1
 
+    controller operator can
+      ArchiveSurrenderByOperator : ()
+        do return ()
+
 template DrawRequest
   with
     player : Party
@@ -216,6 +220,11 @@ template AcceptedDraw
     signatory player, opponent
     key (operator, gameId) : (Party, GameId)
     maintainer key._1
+
+    controller operator can
+      ArchiveAcceptedDrawbyOperator : ()
+        do return ()
+
 
 template ActiveAction
   with
@@ -314,12 +323,12 @@ template OperatorRole
         do
           (sId, surrender) <- fetchByKey @Surrender (operator, gameId)
           (gameStartId, _gameStart) <- fetchByKey @Game (operator, gameId)
-          archive sId
+          exercise sId ArchiveSurrenderByOperator
           exercise gameStartId End with game = None, drawOrWinner = Winner surrender.opponent, ..
 
       nonconsuming AcknowledgeAcceptedDraw : ContractId GameResult
         do
           (adId, acceptedDraw) <- fetchByKey @AcceptedDraw (operator, gameId)
           (gameStartId, _gameStart) <- fetchByKey @Game (operator, gameId)
-          archive adId
+          exercise adId ArchiveAcceptedDrawbyOperator
           exercise gameStartId End with game = None, drawOrWinner = Draw (PlayerDraw acceptedDraw.side)

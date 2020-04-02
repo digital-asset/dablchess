@@ -1,0 +1,33 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.Surrender where
+
+import Chess
+import Types
+import Tests.Init
+
+-- Test of the surrender flow
+
+activeSurrender = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  surrenderId <- submit white do exercise activeSideOfGameId Forfeit
+  gameResultId <- submit operator do exercise operatorRole AcknowledgeSurrender
+  gameResult <- submit black do fetch gameResultId
+
+  assertMsg "Black wins after white forfeitts" (gameResult.drawOrWinner == Winner black)
+
+passiveForfeit = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  surrenderId <- submit black do exercise passiveSideOfGameId Resign
+  gameResultId <- submit operator do exercise operatorRole AcknowledgeSurrender
+  gameResult <- submit white do fetch gameResultId
+
+  assertMsg "White wins after black resigns" (gameResult.drawOrWinner == Winner white)
