@@ -4,9 +4,23 @@
 daml 1.2
 module Tests.Draw where
 
+import DA.Assert
+
 import Types
 import Chess
 import Tests.Init
+
+testOfferDraw = scenario do
+  InitData {..} <- initData
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  drawRequestId <- submit black do exercise passiveSideOfGameId AskForADraw
+  acceptedDrawRequestId <- submit white do exercise drawRequestId AcceptDrawRequest
+  gameResultId <- submit operator do exercise operatorRole AcknowledgeAcceptedDraw
+
+  gameResult <- submit black do fetch gameResultId
+
+  Draw (PlayerDraw Black) === gameResult.drawOrWinner
 
 claimDraw party operator operatorRole game = do
   case game of
