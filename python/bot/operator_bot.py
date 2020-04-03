@@ -14,7 +14,8 @@ class CHESS:
     Game = 'Chess.Game'
     OperatorRole = 'Chess.OperatorRole'
     ActiveAction = 'Chess.ActiveAction'
-
+    Surrender = 'Chess.Surrender'
+    AcceptedDraw = 'Chess.AcceptedDraw'
 
 def main():
     url = os.getenv('DAML_LEDGER_URL')
@@ -37,7 +38,6 @@ def main():
     @client.ledger_created(CHESS.Game)
     def start_game(event): # pylint: disable=unused-variable
         logging.info(f'A new game: {event}')
-        gameId = event.cdata['gameId']
 
         return client.submit_exercise(event.cid, 'Begin')
 
@@ -52,8 +52,29 @@ def main():
         (orId, _operatorRoleParams) = res.popitem()
         return client.submit_exercise(orId, 'AdvancePlay')
 
-    network.run_forever()
+    @client.ledger_created(CHESS.Surrender)
+    def acknowledge_surrender(event):  # pylint: disable=unused-variable
+        logging.info(f'A surrender!: {event}')
+        gameId = event.cdata['gameId']
 
+        res = client.find_active(CHESS.OperatorRole, {'operator':operator_party, 'gameId': gameId})
+        logging.info(f'OperatorRole for {gameId} ? {res}')
+        assert len(res) == 1
+        (orId, _operatorRoleParams) = res.popitem()
+        return client.submit_exercise(orId, 'AcknowledgeSurrender')
+
+    @client.ledger_created(CHESS.AcceptedDraw)
+    def accept_draw(event):  # pylint: disable=unused-variable
+        logging.info(f'A draw has been accepted!: {event}')
+        gameId = event.cdata['gameId']
+
+        res = client.find_active(CHESS.OperatorRole, {'operator':operator_party, 'gameId': gameId})
+        logging.info(f'OperatorRole for {gameId} ? {res}')
+        assert len(res) == 1
+        (orId, _operatorRoleParams) = res.popitem()
+        return client.submit_exercise(orId, 'AcknowledgeAcceptedDraw')
+
+    network.run_forever()
 
 if __name__ == '__main__':
     main()
