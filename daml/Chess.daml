@@ -208,7 +208,10 @@ template DrawRequest
 
     controller opponent can
       AcceptDrawRequest : ContractId AcceptedDraw
-        do create AcceptedDraw with ..
+        do
+        (activeId, activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, opponent)
+        archive activeId
+        create AcceptedDraw with ..
 
 template AcceptedDraw
   with

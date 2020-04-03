@@ -16,8 +16,8 @@ testOfferDraw = scenario do
 
   drawRequestId <- submit black do exercise passiveSideOfGameId AskForADraw
   acceptedDrawRequestId <- submit white do exercise drawRequestId AcceptDrawRequest
+  submitMustFail white do fetch activeSideOfGameId
   gameResultId <- submit operator do exercise operatorRole AcknowledgeAcceptedDraw
-
   gameResult <- submit black do fetch gameResultId
 
   Draw (PlayerDraw Black) === gameResult.drawOrWinner
