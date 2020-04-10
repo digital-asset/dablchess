@@ -12,6 +12,9 @@ sandbox.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+yarn.lock
 
 .daml/
+.dev/
+daml-ts/
 .vscode
