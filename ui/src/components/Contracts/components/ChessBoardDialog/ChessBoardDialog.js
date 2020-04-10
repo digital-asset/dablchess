@@ -10,29 +10,24 @@ export default function ChessBoardDialog({open, onClose, game, contractId}) {
   //const classes = useStyles();
 
   const exerciseMove = useExercise(ActiveSideOfGame.Move);
-  let position = {}
+  let position = {};
   let board = game.pieces.textMap;
-  var k;
-  for (k in board){
+  for (let k in board){
     let piece = board[k];
-    var pk = piece.coord.toLowerCase();
-    var pl = piece.owner[0].toLowerCase() + piece.tp[0];
-    //console.log( pk + " => " + pl);
+    let pk = piece.coord.toLowerCase();
+    let pl = piece.owner[0].toLowerCase() + (piece.tp === "Knight" ? "N" : piece.tp[0]);
     position[pk] = pl;
   }
   function onDrop({sourceSquare, targetSquare, piece}){
-    console.log( "moved " + piece + " from" + sourceSquare + " to " + targetSquare);
     delete position[sourceSquare];
     position[targetSquare] = piece;
-    console.log("Going to move " + contractId);
-    var move = exerciseMove(contractId, { from : sourceSquare.toUpperCase()
+    let move = exerciseMove(contractId, { from : sourceSquare.toUpperCase()
                                         , to : targetSquare.toUpperCase()
                                         });
                                         //, promote : { tag : "None", value:null } });    // TODO
     console.log("We moved! " + move);
     onClose();
   }
-
   return (
     // maxWidth='md' fullWidth={true} >
     <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} fullScreen={true} >
