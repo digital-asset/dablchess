@@ -123,7 +123,7 @@ template PassiveSideOfGame
 
     controller player can
       Resign : ContractId Surrender
-        do create Surrender with ..
+        do create Surrender with activeSurrender = False, ..
       AskForADraw : ContractId DrawRequest
         do create DrawRequest with ..
 
@@ -155,10 +155,9 @@ template ActiveSideOfGame
         do
           create ActiveAction with move = None, ..
 
-
       Forfeit : ContractId Surrender
         do
-          create Surrender with ..
+          create Surrender with activeSurrender = True, ..
 
     controller operator can
       -- operator can only take this action after receiving a unique Move,
@@ -180,6 +179,7 @@ template Surrender
     operator : Party
     gameId : GameId
     opponent : Party
+    activeSurrender : Bool
   where
     signatory operator, player
 
@@ -325,9 +325,18 @@ template OperatorRole
       nonconsuming AcknowledgeSurrender : ContractId GameResult
         do
           (sId, surrender) <- fetchByKey @Surrender (operator, gameId)
-          (gameStartId, _gameStart) <- fetchByKey @Game (operator, gameId)
           exercise sId ArchiveSurrenderByOperator
-          exercise gameStartId End with game = None, drawOrWinner = Winner surrender.opponent, ..
+          (gameStartId, _gameStart) <- fetchByKey @Game (operator, gameId)
+          gameResultId <- exercise gameStartId End with game = None, drawOrWinner = Winner surrender.opponent, ..
+          if surrender.activeSurrender
+          then do
+            (passiveId, _passiveState) <- fetchByKey @PassiveSideOfGame (operator, gameId, surrender.opponent)
+            exercise passiveId DeclareWinnerPassive with result = gameResultId
+            return gameResultId
+          else do
+            (activeId, _activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, surrender.opponent)
+            exercise activeId DeclareWinnerActive with result = gameResultId
+            return gameResultId
 
       nonconsuming AcknowledgeAcceptedDraw : ContractId GameResult
         do

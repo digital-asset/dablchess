@@ -17,9 +17,11 @@ activeSurrender = scenario do
 
   surrenderId <- submit white do exercise activeSideOfGameId Forfeit
   gameResultId <- submit operator do exercise operatorRole AcknowledgeSurrender
-  gameResult <- submit black do fetch gameResultId
+  submitMustFail black do fetch passiveSideOfGameId   -- No more
+  gameResult <- submit black do fetch gameResultId    -- Game result instead!
 
   assertMsg "Black wins after white forfeitts" (gameResult.drawOrWinner == Winner black)
+
 
 passiveForfeit = scenario do
   InitData {..} <- initData
@@ -28,6 +30,7 @@ passiveForfeit = scenario do
 
   surrenderId <- submit black do exercise passiveSideOfGameId Resign
   gameResultId <- submit operator do exercise operatorRole AcknowledgeSurrender
+  submitMustFail <- submit white do fetch activeSideOfGameId
   gameResult <- submit white do fetch gameResultId
 
   assertMsg "White wins after black resigns" (gameResult.drawOrWinner == Winner white)
