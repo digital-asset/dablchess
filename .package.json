@@ -1,0 +1,7 @@
+{
+    "//": "Base config since daml codegen generates new files.",
+    "private": true,
+    "workspaces": [
+        "ui"
+    ]
+}

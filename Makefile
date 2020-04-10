@@ -20,10 +20,11 @@ yarn_log := $(state_dir)/yarn.log
 $(state_dir):
 	mkdir $(state_dir)
 
-$(daml_build_log):
+$(daml_build_log): $(state_dir)
+	grep -v "//" .package.json > package.json; \
 	(daml build && daml codegen ts -o daml-ts -p package.json .daml/dist/chess-1.0.0.dar) > $(daml_build_log)
 
-$(sandbox_pid): $(state_dir) $(daml_build_log)
+$(sandbox_pid): $(daml_build_log)
 	daml start --start-navigator "no" > $(sandbox_log) & echo "$$!" > $(sandbox_pid)
 
 start_daml_server: $(sandbox_pid)
@@ -62,7 +63,7 @@ start_all : start_daml_server start_operator start_ui_server
 stop_all : stop_daml_server stop_operator stop_ui_server
 
 clean:
-	rm -rf $(state_dir)
+	rm -rf $(state_dir) daml-ts package.json
 
 # Release
 #dar_version := $(shell grep "^version" daml.yaml | sed 's/version: //g')
