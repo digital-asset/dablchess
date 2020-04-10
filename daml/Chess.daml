@@ -4,7 +4,6 @@
 daml 1.2
 module Chess where
 
-
 import Rules.Draw
 import Rules.Data
 import Rules.Main
