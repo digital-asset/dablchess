@@ -3,11 +3,11 @@ import Chessboard from "chessboardjsx";
 import { Dialog, DialogTitle } from "@material-ui/core";
 import { useExercise } from "@daml/react";
 import { ActiveSideOfGame } from "@daml-ts/chess-1.0.0/lib/Chess";
-import { useStyles } from "../../styles";
+import { useStyles } from "./styles";
 
 export default function ChessBoardDialog({open, onClose, game, contractId}) {
+  const classes = useStyles();
   console.log("In the game board the contractId: " + contractId);
-  //const classes = useStyles();
 
   const exerciseMove = useExercise(ActiveSideOfGame.Move);
   let position = {};
@@ -29,10 +29,9 @@ export default function ChessBoardDialog({open, onClose, game, contractId}) {
     onClose();
   }
   return (
-    // maxWidth='md' fullWidth={true} >
-    <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} fullScreen={true} >
+    <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} maxWidth='md' fullWidth={true} >
       <DialogTitle id="simple-dialog-title">Move</DialogTitle>
-      <Chessboard position={position}
+      <Chessboard className={classes.chessboard} position={position}
         orientation={game.side.toLowerCase()}
         onDrop={onDrop}
         />
