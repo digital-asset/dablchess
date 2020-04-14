@@ -61,28 +61,17 @@ data GameState = GameState with
   moves : [ChessMove]         -- stack of list moves
     deriving (Eq, Show)
 
--- this is a bit naive at-the-moment, in real fog-of-war white would be able to see black pieces that it is threatening.
-splitGameStateOfSide : Side -> GameState -> GameState
-splitGameStateOfSide side gs =
-  gs with
-    inCheck = if side == gs.side then gs.inCheck else False
-    pieces = M.filter (\ p -> p.owner == side) gs.pieces
-    moves = filter (\m -> m.by == side) gs.moves
 
-mergeMoves acc (w::ws) (b::bs) = mergeMoves (b::(w::acc)) ws bs
-mergeMoves acc [w]     []      = (w :: acc) -- white may have an extra move
-mergeMoves acc []      []      = acc
-mergeMoves _   _       _       = error "More black moves than white ones!"
+type SplitPieceMap = M.Map Coord (Optional Piece) -- Some -> there's a piece , None -> there's no piece but we know that!
 
-joinGameStates : GameState -> GameState -> GameState
-joinGameStates ws bs =
-  if ws.side /= bs.side then
-    error "We can't disagree about who's turn it is to move"
-  else
-    ws with
-      inCheck = if ws.side == White then ws.inCheck else bs.inCheck
-      pieces = M.union ws.pieces bs.pieces
-      moves = mergeMoves [] (reverse ws.moves) (reverse bs.moves)
+-- A game state suitable for fog of war.
+data SplitGameState = SplitGameState with
+  side : Side                 -- who's turn is it
+  pieces : SplitPieceMap      -- pieces on the board.
+  inCheck_ : Bool             -- if side to move is in check  ... (in fog of war reveal the attacking piece?)
+  everCheck : EverCheck       -- has either side been checked
+  moves : [ChessMove]         -- stack of list moves
+    deriving (Eq, Show)
 
 data DrawType
   = PlayerDraw Side

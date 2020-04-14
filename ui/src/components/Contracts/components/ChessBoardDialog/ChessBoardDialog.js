@@ -7,16 +7,32 @@ import { useStyles } from "./styles";
 
 export default function ChessBoardDialog({open, onClose, game, contractId}) {
   const classes = useStyles();
-  console.log("In the game board the contractId: " + contractId);
+
+  /* The defaults in the library are
+  darkSquareStyle: { backgroundColor: 'rgb(181, 136, 99)' }
+  lightSquareStyle: { backgroundColor: 'rgb(240, 217, 181)' }
+  */
+  // Tint these 7/8
+  let visibleDarkStyle = { backgroundColor: 'rgb(135, 102, 74)'};
+  let visibleLightStyle = { backgroundColor: 'rgb(210, 189, 158)'};
 
   const exerciseMove = useExercise(ActiveSideOfGame.Move);
   let position = {};
+  let squareStyles = {};
   let board = game.pieces.textMap;
   for (let k in board){
+    // Types how I miss thee.
+    let asInt = parseInt(k, 10);
+    let col = Math.floor(asInt / 8);
+    let row = asInt % 8;
+    let coord = ['a','b','c','d','e','f','g','h'][col] + (row + 1);
+    let darkPiece = (col % 2 === 0) ? asInt % 2 === 0 : asInt % 2 !== 0;
     let piece = board[k];
-    let pk = piece.coord.toLowerCase();
-    let pl = piece.owner[0].toLowerCase() + (piece.tp === "Knight" ? "N" : piece.tp[0]);
-    position[pk] = pl;
+    squareStyles[coord] = darkPiece ? visibleDarkStyle : visibleLightStyle;
+    if(piece !== null){
+      let pl = piece.owner[0].toLowerCase() + (piece.tp === "Knight" ? "N" : piece.tp[0]);
+      position[coord] = pl;
+    }
   }
   function onDrop({sourceSquare, targetSquare, piece}){
     delete position[sourceSquare];
@@ -25,15 +41,16 @@ export default function ChessBoardDialog({open, onClose, game, contractId}) {
                                         , to : targetSquare.toUpperCase()
                                         });
                                         //, promote : { tag : "None", value:null } });    // TODO
-    console.log("We moved! " + move);
     onClose();
   }
   return (
     <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} maxWidth='md' fullWidth={true} >
       <DialogTitle id="simple-dialog-title">Move</DialogTitle>
-      <Chessboard className={classes.chessboard} position={position}
+      <Chessboard className={classes.chessboard}
+        position={position}
         orientation={game.side.toLowerCase()}
         onDrop={onDrop}
+        squareStyles={squareStyles}
         />
     </Dialog>
   );

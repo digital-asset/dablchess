@@ -75,10 +75,3 @@ initState () =
     initWhitePieces = initPieces White
     initBlackPieces = initPieces Black
 
-initSplitState side =
-  GameState with
-    side = White  -- It is always White's obligation to move first.
-    pieces = toPieceMap $ initPieces side
-    inCheck = False
-    everCheck = EverCheck with white = False, black = False
-    moves = []

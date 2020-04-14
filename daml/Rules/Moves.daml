@@ -263,3 +263,8 @@ legal state mv = do
   then Left "Still in Check"
   else Right (updateTurn ns)
 
+visibleCoords : Side -> GameState -> SplitPieceMap
+visibleCoords side gs = foldMoves justCoords M.empty (gs with side = side)
+    where justCoords m _ (Move coord)            = M.insert coord None m
+          justCoords m _ (Capture p)             = M.insert p.coord (Some p) m
+          justCoords m _ (EnPassant {eto, ecap}) = M.insert eto None $ M.insert ecap.coord (Some ecap) m

@@ -5,8 +5,8 @@ daml 1.2
 module Chess where
 
 import Rules.Draw
-import Rules.Data
 import Rules.Main
+import Rules.SplitState
 import Types
 
 -- Logic to handle games.
@@ -66,13 +66,13 @@ template Game
           activeId <- create ActiveSideOfGame with
                           player = activeSide
                           opponent = passiveSide
-                          active = Rules.Data.initSplitState White
+                          active = Rules.SplitState.initSplitState White
                           side = White
                           ..
           passiveId <- create PassiveSideOfGame with
                           player = passiveSide
                           opponent = activeSide
-                          passive = Rules.Data.initSplitState Black
+                          passive = Rules.SplitState.initSplitState Black
                           side = Black
                           ..
           gameRoleId <- create OperatorRole with ..
@@ -105,7 +105,7 @@ template PassiveSideOfGame
     operator : Party
     opponent : Party
     gameId : GameId
-    passive : GameState
+    passive : SplitGameState
   where
     signatory player, operator
     key (operator, gameId, player) : SideKey
@@ -114,7 +114,7 @@ template PassiveSideOfGame
     controller operator can
       Activate : ContractId ActiveSideOfGame
         with
-          active : GameState
+          active : SplitGameState
         do create ActiveSideOfGame with ..
       DeclareWinnerPassive : ContractId GameResult --
         with
@@ -135,7 +135,7 @@ template ActiveSideOfGame
     operator : Party
     opponent : Party
     gameId : GameId
-    active : GameState
+    active : SplitGameState
   where
     signatory player, operator
     key (operator, gameId, player) : SideKey
@@ -163,7 +163,7 @@ template ActiveSideOfGame
       -- operator can only take this action after receiving a unique Move,
       Inactivate : ContractId PassiveSideOfGame
         with
-          passive : GameState
+          passive : SplitGameState
         do
           create PassiveSideOfGame with ..
 

@@ -6,7 +6,6 @@ module Tests.SpecialRules where
 
 import DA.Next.Map as M
 --import DA.Either
-import DA.Optional
 
 import Tests.Init
 import Types
@@ -79,7 +78,7 @@ testCheck = scenario do
   case game of
     Right (a, _) -> do
       c <- submit black do fetch a
-      assertMsg "No one has been checked" (not c.active.inCheck
+      assertMsg "No one has been checked" (not c.active.inCheck_
                                        && (c.active.everCheck == EverCheck { white = False, black = False}))
     Left _ -> abort "Game should be in play"
 
@@ -113,7 +112,9 @@ testEnPassant = scenario do
   case enPassant of
     Right (a, _) -> do
       ac <- submit black do fetch a
-      assertMsg "Black pawn should be gone" (isNone (M.lookup C7 ac.active.pieces))
+      let isSomeOfNone (Some None) = True
+          isSomeOfNone _           = False
+      assertMsg "Black pawn should be gone" (isSomeOfNone (M.lookup C7 ac.active.pieces))
     Left _ -> abort "Game should be in play"
 
 {- Still a WIP
