@@ -5,14 +5,14 @@ import { useExercise } from "@daml/react";
 import { ActiveSideOfGame } from "@daml-ts/chess-1.0.0/lib/Chess";
 import { useStyles } from "./styles";
 
-export default function ChessBoardDialog({open, onClose, game, contractId}) {
+export default function ChessBoardDialog({open, onClose, game, active, contractId}) {
   const classes = useStyles();
 
   /* The defaults in the library are
   darkSquareStyle: { backgroundColor: 'rgb(181, 136, 99)' }
   lightSquareStyle: { backgroundColor: 'rgb(240, 217, 181)' }
   */
-  // Tint these 7/8
+  // Tint these by 3/4
   let visibleDarkStyle = { backgroundColor: 'rgb(135, 102, 74)'};
   let visibleLightStyle = { backgroundColor: 'rgb(210, 189, 158)'};
 
@@ -44,13 +44,19 @@ export default function ChessBoardDialog({open, onClose, game, contractId}) {
     console.log(`move: ${move}`);
     onClose();
   }
+  function allowDrag({_piece, _sourceSquare }){
+    console.log(`allowDrag ${active}`);
+    return active;
+  }
   return (
     <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} maxWidth='md' fullWidth={true} >
       <DialogTitle id="simple-dialog-title">Move</DialogTitle>
-      <Chessboard className={classes.chessboard}
+      <Chessboard
+        className={classes.chessboard}
         position={position}
         orientation={game.side.toLowerCase()}
         onDrop={onDrop}
+        allowDrag={allowDrag}
         squareStyles={squareStyles}
         />
     </Dialog>

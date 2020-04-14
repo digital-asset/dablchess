@@ -80,7 +80,7 @@ function ActiveSideOfGameRow({activeSideOfGame}) {
 
   return (
     <>
-      <ChessBoardDialog open={openChessBoard} onClose={handleClose} game={ap.active} contractId={activeSideOfGame.contractId} />
+      <ChessBoardDialog open={openChessBoard} onClose={handleClose} game={ap.active} active={true} contractId={activeSideOfGame.contractId} />
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{ap.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{ap.side}</TableCell>
@@ -115,8 +115,20 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
     return exerciseResign(passiveSideOfGame.contractId, {});
   }
 
+  const [openChessBoard, setOpenChessBoard] = React.useState(false);
+
+  function handleClose() {
+    setOpenChessBoard(false);
+  };
+
+  function onClick(){
+    setOpenChessBoard(true);
+  }
+
   return (
-      <TableRow className={classes.tableRow}>
+    <>
+      <ChessBoardDialog open={openChessBoard} onClose={handleClose} game={pp.passive} active={false} contractId={passiveSideOfGame.contractId} />
+      <TableRow className={classes.tableRow} onClick={onClick}>
         <TableCell className={classes.tableCell}>{pp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{pp.side}</TableCell>
         <TableCell className={classes.tableCell}>{pp.opponent}</TableCell>
@@ -128,6 +140,7 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
           </ButtonGroup>
         </TableCell>
       </TableRow>
+    </>
   );
 }
 
