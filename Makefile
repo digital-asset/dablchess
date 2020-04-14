@@ -1,4 +1,3 @@
-PYTHON := pipenv run python
 # Development
 
 state_dir := .dev
@@ -6,7 +5,7 @@ daml_build_log := $(state_dir)/daml_build.log
 sandbox_pid := $(state_dir)/sandbox.pid
 sandbox_log := $(state_dir)/sandbox.log
 
-operator_bot_dir := python/build/lib/bot
+operator_bot_dir := operator_bot/bot.egg-info
 operator_pid := $(state_dir)/operator.pid
 operator_log := $(state_dir)/operator.log
 
@@ -35,10 +34,10 @@ stop_daml_server:
 ### Operator bot
 
 $(operator_bot_dir):
-	cd python && python setup.py build
+	cd operator_bot && poetry install
 
 $(operator_pid): $(state_dir) $(operator_bot_dir)
-	DAML_LEDGER_URL=localhost:6865 python $(operator_bot_dir)/operator_bot.py > $(operator_log) & echo "$$!" > $(operator_pid)
+	cd operator_bot && (DAML_LEDGER_URL=localhost:6865 poetry run python bot/operator_bot.py > ../$(operator_log) & echo "$$!" > ../$(operator_pid))
 
 start_operator: $(operator_pid)
 
