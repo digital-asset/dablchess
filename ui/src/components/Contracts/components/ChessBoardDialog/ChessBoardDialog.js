@@ -41,6 +41,7 @@ export default function ChessBoardDialog({open, onClose, game, contractId}) {
                                         , to : targetSquare.toUpperCase()
                                         });
                                         //, promote : { tag : "None", value:null } });    // TODO
+    console.log(`move: ${move}`);
     onClose();
   }
   return (

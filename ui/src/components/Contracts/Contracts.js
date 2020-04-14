@@ -19,8 +19,8 @@ function MyButton({text, onClick}){
   );
 }
 
-function GameProposalRow({gameProposal, k}) {
-  console.log("Converting a gameProposal" + JSON.stringify(gameProposal));
+function GameProposalRow({gameProposal}) {
+  console.log(`Converting a gameProposal ${gameProposal.contractId}.`);
   let gp = gameProposal.payload;
 
   const userState = useUserState();
@@ -38,7 +38,7 @@ function GameProposalRow({gameProposal, k}) {
   }
 
   return (
-      <TableRow key={k} className={classes.tableRow}>
+      <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{gp.desiredSide}</TableCell>
         <TableCell className={classes.tableCell}>{gp.opponent}</TableCell>
@@ -52,8 +52,8 @@ function GameProposalRow({gameProposal, k}) {
   );
 }
 
-function ActiveSideOfGameRow({activeSideOfGame, k}) {
-  console.log("Converting an active side of game" + JSON.stringify(activeSideOfGame));
+function ActiveSideOfGameRow({activeSideOfGame}) {
+  console.log(`Converting an active side of game ${activeSideOfGame.contractId}.`);
   let ap = activeSideOfGame.payload;
 
   const classes = useStyles();
@@ -81,7 +81,7 @@ function ActiveSideOfGameRow({activeSideOfGame, k}) {
   return (
     <>
       <ChessBoardDialog open={openChessBoard} onClose={handleClose} game={ap.active} contractId={activeSideOfGame.contractId} />
-      <TableRow key={k} className={classes.tableRow}>
+      <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{ap.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{ap.side}</TableCell>
         <TableCell className={classes.tableCell}>{ap.opponent}</TableCell>
@@ -97,8 +97,8 @@ function ActiveSideOfGameRow({activeSideOfGame, k}) {
   )
 }
 
-function PassiveSideOfGameRow({passiveSideOfGame, k}) {
-  console.log("Converting an active side of game" + JSON.stringify(passiveSideOfGame));
+function PassiveSideOfGameRow({passiveSideOfGame}) {
+  console.log(`Converting an passive side of game ${passiveSideOfGame.contractId}.`);
   let pp = passiveSideOfGame.payload;
 
   const classes = useStyles();
@@ -116,7 +116,7 @@ function PassiveSideOfGameRow({passiveSideOfGame, k}) {
   }
 
   return (
-      <TableRow key={k} className={classes.tableRow}>
+      <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{pp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{pp.side}</TableCell>
         <TableCell className={classes.tableCell}>{pp.opponent}</TableCell>
@@ -131,9 +131,8 @@ function PassiveSideOfGameRow({passiveSideOfGame, k}) {
   );
 }
 
-
-function GameResultRow({gameResult, k}) {
-  console.log("Converting a gameResult" + JSON.stringify(gameResult));
+function GameResultRow({gameResult}) {
+  console.log(`Converting a gameResult ${gameResult.contractId}.`);
 
   const classes = useStyles();
   const userState = useUserState();
@@ -148,7 +147,7 @@ function GameResultRow({gameResult, k}) {
       break
   };
   return (
-      <TableRow key={k} className={classes.tableRow}>
+      <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
         <TableCell className={classes.tableCell}></TableCell>
         <TableCell className={classes.tableCell}>{gp.opponent === userState.party ? gp.proposer : gp.opponent}</TableCell>
@@ -180,10 +179,10 @@ export default function Contracts({ gameProposals, activeGames, passiveGames, ga
             </TableRow>
           </TableHead>
           <TableBody>
-            { gameProposals.map((c, i) => <GameProposalRow gameProposal={c} key={i}/>) }
-            { activeGames.map((c,i) => <ActiveSideOfGameRow activeSideOfGame={c} k={i}/>) }
-            { passiveGames.map((c,i) => <PassiveSideOfGameRow passiveSideOfGame={c} k={i}/>) }
-            { gameResults.map((c,i) => <GameResultRow gameResult={c} k={i}/>)}
+            { gameProposals.map(c => <GameProposalRow gameProposal={c} key={"0" + c.contractId}/>) }
+            { activeGames.map(c => <ActiveSideOfGameRow activeSideOfGame={c} key={"1" + c.contractId}/>) }
+            { passiveGames.map(c => <PassiveSideOfGameRow passiveSideOfGame={c} key={"2" + c.contractId}/>) }
+            { gameResults.map(c => <GameResultRow gameResult={c} key={"3" + c.contractId}/>)}
           </TableBody>
         </Table>
       </Grid>
