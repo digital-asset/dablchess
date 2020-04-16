@@ -28,7 +28,7 @@ export default function NewGameDialog({open, handleClose}) {
       try {
         let ledger = new Ledger({token:user.token, httpBaseUrl:httpBaseUrl, wsBaseUrl:wsBaseUrl});
         let gameProposalContract = ledger.create(GameProposal, gameProposalArgs);
-        console.log("WE created a game: " + JSON.stringify(gameProposalContract));
+        console.log("We created a game: " + JSON.stringify(gameProposalContract));
       } catch(error) {
         alert("Error creating a gameProposal" + error + " " + JSON.stringify(gameProposalArgs));
       }
