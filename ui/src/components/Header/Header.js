@@ -47,7 +47,7 @@ function Header({ history }) {
           )}
         </IconButton>
         <Typography variant="h6" weight="medium" className={classes.logotype}>
-          DAML App Template
+          DABL Chess
         </Typography>
         <div className={classes.grow} />
         <Typography variant="h6" weight="medium">User: {userState.party}</Typography>
