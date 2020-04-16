@@ -1,8 +1,7 @@
 import React from "react";
 import Contracts from "../../components/Contracts/Contracts";
-//import { useStreamQuery, useExercise } from "@daml/react";
 import { useStreamQuery } from "@daml/react";
-import { ActiveSideOfGame, GameProposal, GameResult, PassiveSideOfGame } from "@daml-ts/chess-1.0.0/lib/Chess";
+import { ActiveSideOfGame, GameProposal, GameResult, PassiveSideOfGame } from "@daml-ts/chess-0.1.0/lib/Chess";
 
 export default function GamesTable() {
 
@@ -12,13 +11,11 @@ export default function GamesTable() {
   const gameResults = useStreamQuery(GameResult);
 
   return (
-    <>
-      <Contracts
-        gameProposals={gameProposals.contracts}
-        activeGames={activeGames.contracts}
-        passiveGames={passiveGames.contracts}
-        gameResults={gameResults.contracts}
-      />
-    </>
+    <Contracts
+      gameProposals={gameProposals.contracts}
+      activeGames={activeGames.contracts}
+      passiveGames={passiveGames.contracts}
+      gameResults={gameResults.contracts}
+    />
   );
 }

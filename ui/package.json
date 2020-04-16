@@ -1,9 +1,9 @@
 {
   "name": "dablchess",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@daml-ts/chess-1.0.0": "^0.13.55",
+    "@daml-ts/chess-0.1.0": "^0.13.55",
     "@daml/ledger": "^0.13.55",
     "@daml/react": "^0.13.55",
     "@daml/types": "^0.13.55",

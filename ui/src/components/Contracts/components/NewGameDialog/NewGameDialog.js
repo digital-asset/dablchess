@@ -5,7 +5,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl,
 import { wsBaseUrl, httpBaseUrl } from "../../../../config";
 import { useUserState } from "../../../../context/UserContext";
 import Ledger from "@daml/ledger";
-import { GameProposal } from "@daml-ts/chess-1.0.0/lib/Chess";
+import { GameProposal } from "@daml-ts/chess-0.1.0/lib/Chess";
 
 export default function NewGameDialog({open, handleClose}) {
 

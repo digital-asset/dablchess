@@ -2,7 +2,7 @@ import React from "react";
 import Chessboard from "chessboardjsx";
 import { Dialog, DialogTitle } from "@material-ui/core";
 import { useExercise } from "@daml/react";
-import { ActiveSideOfGame } from "@daml-ts/chess-1.0.0/lib/Chess";
+import { ActiveSideOfGame } from "@daml-ts/chess-0.1.0/lib/Chess";
 import { useStyles } from "./styles";
 
 export default function ChessBoardDialog({open, onClose, game, active, contractId}) {

@@ -2,7 +2,7 @@ import React from "react";
 import { useExercise } from "@daml/react";
 import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell , TableBody } from "@material-ui/core";
 import { useStyles } from "./styles";
-import { ActiveSideOfGame, GameProposal, PassiveSideOfGame } from "@daml-ts/chess-1.0.0/lib/Chess";
+import { ActiveSideOfGame, GameProposal, PassiveSideOfGame } from "@daml-ts/chess-0.1.0/lib/Chess";
 import { useUserState } from "../../context/UserContext";
 import NewGameDialog from "./components/NewGameDialog/NewGameDialog";
 import ChessBoardDialog from "./components/ChessBoardDialog/ChessBoardDialog";
