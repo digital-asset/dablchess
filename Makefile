@@ -71,29 +71,28 @@ clean:
 
 # Release
 
-dar := target/dablchess-model-$(dar_version).dar
-bot := target/dablchess-bot-$(bot_version).tar.gz
-ui := target/dablchess-ui-$(ui_version).zip
+target_dir := target
+dar := $(target_dir)/dablchess-model-$(dar_version).dar
+bot := $(target_dir)/dablchess-bot-$(bot_version).tar.gz
+ui := $(target_dir)/dablchess-ui-$(ui_version).zip
 
+$(target_dir):
+	mkdir $@
 
 .PHONY: package
 package: $(bot) $(dar) $(ui)
-	cd target && zip dabl-chess.zip *
+	cd $(target_dir) && zip dabl-chess.zip *
+	#cd $(target_dir) && zip dabl-chess.zip * && rm dablchess*
 
-	#cd target && zip dabl-chess.zip * && rm dablchess*
+$(dar): $(target_dir) $(daml_build_log)
+	cp .daml/dist/chess-$(dar_version).dar $@
 
-$(dar): $(daml_build_log)
-	mkdir -p $(@D)
-	cp .daml/dist/*.dar $@
-
-$(bot):$(operator_bot_dir)
-	mkdir -p $(@D)
+$(bot): $(target_dir) $(operator_bot_dir)
 	cp operator_bot/dist/bot-$(bot_version).tar.gz $@
 
-$(ui): $(yarn_build_log)
+$(ui): $(target_dir) $(yarn_build_log)
 	cd ui && yarn build
 	cd ui && zip -r dablchess-ui-$(ui_version).zip build
-	mkdir -p $(@D)
 	mv ui/dablchess-ui-$(ui_version).zip $@
 
 #.PHONY: clean
