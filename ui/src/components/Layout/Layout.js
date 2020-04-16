@@ -5,8 +5,6 @@ import useStyles from "./styles";
 import Header from "../Header/Header";
 import Sidebar from "../Sidebar/Sidebar";
 import { useLayoutState } from "../../context/LayoutContext";
-//import Default from "../../pages/default/Default";
-//import Report from "../../pages/report/Report";
 import GamesTable from "../../pages/games-table/GamesTable";
 import DamlLedger from "@daml/react";
 import { useUserState } from "../../context/UserContext";
@@ -30,7 +28,6 @@ function Layout() {
             >
               <div className={classes.fakeToolbar} />
               <Switch>
-                {/*<Route path="/app/default" component={Default} /> */}
                 <Route path="/app/games-table" component={GamesTable} />
               </Switch>
             </div>
