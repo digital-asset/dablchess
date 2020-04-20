@@ -38,11 +38,11 @@ function GameProposalRow({gameProposal}) {
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{gp.desiredSide}</TableCell>
         <TableCell className={classes.tableCell}>{gp.opponent}</TableCell>
-        { userState.party === gp.proposer
-        ? (<TableCell className={classes.tablecell}>{gp.opponent} has to accept.</TableCell>)
-        : (<TableCell className={classes.tablecell}>
+        { userState.party === gp.opponent
+        ? (<TableCell className={classes.tablecell}>
             <MyButton text="Accept" onClick={acceptGameProposal} />
           </TableCell>)
+        : (<TableCell className={classes.tablecell}>{gp.opponent} has to accept.</TableCell>)
         }
       </TableRow>
   );
