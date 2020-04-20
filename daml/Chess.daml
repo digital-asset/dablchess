@@ -68,12 +68,14 @@ template Game
                           opponent = passiveSide
                           active = Rules.SplitState.initSplitState White
                           side = White
+                          flag = True
                           ..
           passiveId <- create PassiveSideOfGame with
                           player = passiveSide
                           opponent = activeSide
                           passive = Rules.SplitState.initSplitState Black
                           side = Black
+                          flag = True
                           ..
           gameRoleId <- create OperatorRole with ..
           return (activeId, passiveId, gameRoleId)
@@ -96,7 +98,7 @@ template GameResult
   where
     signatory proposer, opponent, operator
 
-type SideKey = (Party, GameId, Party)
+type SideKey = (Party, GameId, Party, Bool)
 
 template PassiveSideOfGame
   with
@@ -106,16 +108,17 @@ template PassiveSideOfGame
     opponent : Party
     gameId : GameId
     passive : SplitGameState
+    flag : Bool
   where
     signatory player, operator
-    key (operator, gameId, player) : SideKey
+    key (operator, gameId, player, flag) : SideKey
     maintainer key._1
 
     controller operator can
       Activate : ContractId ActiveSideOfGame
         with
           active : SplitGameState
-        do create ActiveSideOfGame with ..
+        do create ActiveSideOfGame with flag = not flag, ..
       DeclareWinnerPassive : ContractId GameResult --
         with
           result : ContractId GameResult
@@ -136,9 +139,10 @@ template ActiveSideOfGame
     opponent : Party
     gameId : GameId
     active : SplitGameState
+    flag :  Bool
   where
     signatory player, operator
-    key (operator, gameId, player) : SideKey
+    key (operator, gameId, player, flag) : SideKey
     maintainer key._1
 
     controller player can
@@ -165,7 +169,7 @@ template ActiveSideOfGame
         with
           passive : SplitGameState
         do
-          create PassiveSideOfGame with ..
+          create PassiveSideOfGame with flag = not flag, ..
 
       DeclareWinnerActive : ContractId GameResult --
         with
@@ -180,6 +184,7 @@ template Surrender
     gameId : GameId
     opponent : Party
     activeSurrender : Bool
+    flag : Bool
   where
     signatory operator, player
 
@@ -198,6 +203,7 @@ template DrawRequest
     opponent : Party
     side : Side
     -- reveal : Bool -- add?
+    flag : Bool
   where
     signatory operator, player
     observer opponent
@@ -208,7 +214,7 @@ template DrawRequest
     controller opponent can
       AcceptDrawRequest : ContractId AcceptedDraw
         do
-        (activeId, activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, opponent)
+        (activeId, activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, opponent, flag)
         archive activeId
         create AcceptedDraw with ..
 
@@ -236,6 +242,7 @@ template ActiveAction
     gameId : GameId
     opponent : Party
     move : Optional ChessMove     -- None = ClaimDraw
+    flag : Bool
   where
     signatory operator
 
@@ -265,8 +272,8 @@ template OperatorRole
           exercise amId Archive
 
           -- figure out global state
-          (activeId, activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, player)
-          (passiveId, passiveState) <- fetchByKey @PassiveSideOfGame (operator, gameId, opponent)
+          (activeId, activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, player, action.flag)
+          (passiveId, passiveState) <- fetchByKey @PassiveSideOfGame (operator, gameId, opponent, action.flag)
           let gameState = if activeState.side == White
                           then joinGameStates activeState.active passiveState.passive
                           else joinGameStates passiveState.passive activeState.active
@@ -330,11 +337,11 @@ template OperatorRole
           gameResultId <- exercise gameStartId End with game = None, drawOrWinner = Winner surrender.opponent, ..
           if surrender.activeSurrender
           then do
-            (passiveId, _passiveState) <- fetchByKey @PassiveSideOfGame (operator, gameId, surrender.opponent)
+            (passiveId, _passiveState) <- fetchByKey @PassiveSideOfGame (operator, gameId, surrender.opponent, surrender.flag)
             exercise passiveId DeclareWinnerPassive with result = gameResultId
             return gameResultId
           else do
-            (activeId, _activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, surrender.opponent)
+            (activeId, _activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, surrender.opponent, surrender.flag)
             exercise activeId DeclareWinnerActive with result = gameResultId
             return gameResultId
 

@@ -1,0 +1,57 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.PlayAgainstSelf where
+
+import DA.Assert
+
+import Chess
+import Types
+
+-- You should be able to play against yourself.
+
+self = do
+  let gameId = "Epic Battle"
+  alice <- getParty "Alice"
+  operator <- getParty "Ref"
+
+  gameProposalId <- submit alice do
+    create GameProposal with
+      gameId
+      proposer = alice
+      desiredSide = White
+      opponent = alice
+      operator
+
+  gameAcceptId <- submit alice do exercise gameProposalId Accept
+  gId <- submit operator do exercise gameAcceptId Start
+
+  (activeSideOfGameId, passiveSideOfGameId, operatorRole) <- submit operator do
+    exercise gId Begin
+
+  active <- submit alice do fetch activeSideOfGameId
+  active.player === alice
+  active.opponent === alice
+
+  passive <- submit alice do fetch passiveSideOfGameId
+  passive.player === alice
+  passive.opponent === alice
+
+  _activeActionId <- submit alice do
+    exercise activeSideOfGameId Move with
+                                  from = D2
+                                  to = D4
+                                  promote = None
+
+  game <- submit operator do
+    exercise operatorRole AdvancePlay
+
+  (a,p) <- case game of
+              Left _result -> abort "The game is not over!"
+              Right p -> return p
+
+  _activeActionId2 <- submit alice do
+    exercise a Move with from = D7, to = D5, promote = None
+
+  return ()
