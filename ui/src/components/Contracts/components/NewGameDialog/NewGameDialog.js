@@ -8,9 +8,9 @@ import { GameProposal } from "@daml-ts/chess-0.2.0/lib/Chess";
 export default function NewGameDialog({open, handleClose}) {
 
   const user = useUserState();
+  const wellKnownParties = useWellKnownParties();
   let gameIdTextInput = React.createRef();
   let opponentTextInput = React.createRef();
-  let operatorTextInput = React.createRef();
   const [side, setSide] = React.useState("White");
   const ledger = useLedger();
 
@@ -25,11 +25,11 @@ export default function NewGameDialog({open, handleClose}) {
 
   function onClose(proposed){
     // User actually submitted the request.
-    if(proposed && !!gameIdTextInput.value && !!opponentTextInput.value && !!operatorTextInput.value ){
+    if(proposed && !!gameIdTextInput.value && !!opponentTextInput.value ){
       let gameProposalArgs =  { gameId:gameIdTextInput.value
                               , proposer:user.party
                               , opponent:opponentTextInput.value
-                              , operator:operatorTextInput.value        // TODO. Need to look this up dynamically.
+                              , operator:wellKnownParties.userAdminParty
                               , desiredSide:side                        // in JS this has to be a string.
                               };
       console.log("A game proposal args:" + JSON.stringify(gameProposalArgs));
@@ -60,16 +60,6 @@ export default function NewGameDialog({open, handleClose}) {
             label="Opponent"
             fullWidth
             inputRef={e => (opponentTextInput = e)}
-          />
-          <TextField
-            autoFocus
-            margin="dense"
-            id="operator"
-            placeholder="Who will operate the contract game?"
-            label="Ref"
-            defaultValue="Ref"
-            fullWidth
-            inputRef={e => (operatorTextInput = e)}
           />
           <FormControl component="fieldset"  >
             <FormLabel component="legend">Desired Side</FormLabel>

@@ -1,5 +1,6 @@
-import React from "react";
-import { createToken, dablLoginUrl } from "../config";
+import React, {useState, useEffect} from "react";
+import { createToken, dablLoginUrl, getWellKnownParties } from "../config";
+
 
 var UserStateContext = React.createContext();
 var UserDispatchContext = React.createContext();
@@ -18,6 +19,20 @@ function userReducer(state, action) {
   }
 }
 
+function useWellKnownParties(){
+  const [wellKnownParties, setWKP] = useState({});
+  useEffect(() => {
+      async function res() {
+          const wkp = await getWellKnownParties();
+          console.log(`wkp : ${JSON.stringify(wkp)}`);
+          setWKP(wkp);
+      };
+      res();
+    },[]);
+
+  return wellKnownParties;
+}
+
 function UserProvider({ children }) {
   const party = localStorage.getItem("daml.party")
   const token = localStorage.getItem("daml.token")
@@ -27,6 +42,7 @@ function UserProvider({ children }) {
     token,
     party
   });
+
 
   return (
     <UserStateContext.Provider value={state}>
@@ -53,7 +69,6 @@ function useUserDispatch() {
   return context;
 }
 
-
 // ###########################################################
 
 function loginUser(dispatch, party, userToken, history, setIsLoading, setError) {
@@ -64,7 +79,6 @@ function loginUser(dispatch, party, userToken, history, setIsLoading, setError) 
     const token = userToken || createToken(party)
     localStorage.setItem("daml.party", party);
     localStorage.setItem("daml.token", token);
-
     dispatch({ type: "LOGIN_SUCCESS", token, party });
     setError(null);
     setIsLoading(false);
@@ -89,4 +103,4 @@ function signOut(event, dispatch, history) {
   history.push("/login");
 }
 
-export { UserProvider, useUserState, useUserDispatch, loginUser, loginDablUser, signOut };
+export { UserProvider, useUserState, useUserDispatch, loginUser, loginDablUser, signOut, useWellKnownParties};

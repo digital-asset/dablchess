@@ -51,7 +51,6 @@ export default function ChessBoardDialog({open, onClose, game, active, contractI
   }
 
   function allowDrag({_piece, _sourceSquare }){
-    console.log(`allowDrag ${active}`);
     return active;
   }
 
