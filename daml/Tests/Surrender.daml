@@ -30,7 +30,7 @@ passiveForfeit = scenario do
 
   surrenderId <- submit black do exercise passiveSideOfGameId Resign
   gameResultId <- submit operator do exercise operatorRole AcknowledgeSurrender
-  submitMustFail <- submit white do fetch activeSideOfGameId
+  submitMustFail white do fetch activeSideOfGameId
   gameResult <- submit white do fetch gameResultId
 
   assertMsg "White wins after black resigns" (gameResult.drawOrWinner == Winner white)
