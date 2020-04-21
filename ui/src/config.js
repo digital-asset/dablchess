@@ -27,13 +27,12 @@ loginUrl.unshift('login')
 
 export const dablLoginUrl = loginUrl.join('.') + portPartOfUrl + '/auth/login?ledgerId=' + ledgerId;
 
-export const wellKnownUrl = isLocalDev ? undefined : (host.join('.') + portPartOfUrl + '/.well-known/dabl.json');
-
 export async function getWellKnownParties() {
   if(isLocalDev){
     return { userAdminParty: 'Ref', publicParty : 'Ref'}
   } else {
-    try{
+    try {
+      let wellKnownUrl = host.join('.') + portPartOfUrl + '/.well-known/dabl.json';
       const response = await fetch('//' + wellKnownUrl );
       const dablJson = await response.json();
       console.log(`dablJson ${JSON.stringify(dablJson)}`);
@@ -44,6 +43,19 @@ export async function getWellKnownParties() {
     }
   }
 }
-
-//export const wellKnownPartiesJson =  getWellKnownParties();
-//console.log(`The well know JSON is: ${JSON.stringify(wellKnownPartiesJson)}`);
+/*
+export async function fetchPublicToken() {
+  if(isLocalDev){
+    return ""
+  } else {
+    try {
+      const response = await fetch('//' + host.join(".") + portPartOfUrl + '/api/ledger/public/token', { method: 'POST' });
+      const jsonResp = await response.json();
+      const accessToken = jsonResp['access_token'];
+      return accessToken;
+    } catch(error){
+      alert(`Error fetching public token ${error}`);
+      return "";
+    }
+}
+*/

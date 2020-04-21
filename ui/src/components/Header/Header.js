@@ -1,12 +1,14 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import { withRouter } from "react-router-dom";
-import { AppBar, Toolbar, IconButton, Typography } from "@material-ui/core";
+import { AppBar, Toolbar, IconButton, Typography, TextField } from "@material-ui/core";
 import { Menu, ExitToApp, ArrowBack, Refresh } from "@material-ui/icons";
 import classNames from "classnames";
 import useStyles from "./styles";
 import { useLayoutState, useLayoutDispatch, toggleSidebar } from "../../context/LayoutContext";
-import { useUserDispatch, signOut, useUserState } from "../../context/UserContext";
-import { useReload } from "@daml/react";
+import { useAliases, useWellKnownParties, useUserState, useUserDispatch, signOut } from "../../context/UserContext";
+import { useLedger, useReload } from "@daml/react";
+import { AliasRequest } from "@daml-ts/chess-0.2.0/lib/Alias";
+
 
 function Header({ history }) {
   const classes = useStyles();
@@ -17,6 +19,26 @@ function Header({ history }) {
   const userState = useUserState();
   const userDispatch = useUserDispatch();
   const reload = useReload();
+
+  const [alias, setAlias] = useState('')
+  const [toAlias, toParty] = useAliases();
+  useEffect(() => {
+    console.log(`??`);
+    setAlias(toAlias(userState.party));
+  }, []);
+
+  const wellKnownParties = useWellKnownParties();
+  const ledger = useLedger();
+
+  async function onAliasEnter(newAliasValue){
+    let args = { user : userState.party
+               , alias : newAliasValue
+               , operator : wellKnownParties.userAdminParty
+               };
+    let aliasRequest = await ledger.create(AliasRequest, args);
+    console.log(`Sent an aliasRequest ${JSON.stringify(args)} -> ${JSON.stringify(aliasRequest)}`);
+    //setAlias(newAliasValue);
+  }
 
   return (
     <AppBar position="fixed" className={classes.appBar}>
@@ -50,6 +72,24 @@ function Header({ history }) {
           DABL Chess
         </Typography>
         <div className={classes.grow} />
+        <TextField
+          id="alias"
+          InputProps={{
+            classes: {
+              underline: classes.textFieldUnderline,
+              input: classes.textField,
+            },
+          }}
+          // How can I create the effect that this alias has been set?
+          value={alias}
+          onChange={e => setAlias(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter" && !!e.target.value) {
+              onAliasEnter(e.target.value);
+            }
+          }}
+        />
+                                        {/* Do not set this vvvvv one to an Alias */}
         <Typography variant="h6" weight="medium">User: {userState.party}</Typography>
         <IconButton
           color="inherit"

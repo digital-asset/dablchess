@@ -1,5 +1,7 @@
 import React, {useState, useEffect} from "react";
+import { useStreamQuery } from "@daml/react";
 import { createToken, dablLoginUrl, getWellKnownParties } from "../config";
+import { Aliases } from "@daml-ts/chess-0.2.0/lib/Alias";
 
 
 var UserStateContext = React.createContext();
@@ -31,6 +33,28 @@ function useWellKnownParties(){
     },[]);
 
   return wellKnownParties;
+}
+
+function useAliases() {
+  const [aliasToParty, setAliasToParty] = useState({});
+  const [partyToAlias, setPartyToAlias] = useState({});
+  const aliases = useStreamQuery(Aliases);
+  useEffect(() => {
+    console.log(`We know of the following aliases: ${JSON.stringify(aliases)} ${!aliases.loading} ${aliases.contracts.length}`);
+    if(!aliases.loading && aliases.contracts.length > 0){
+      setAliasToParty(aliases.contracts[0].payload.aliasToParty.textMap);
+      setPartyToAlias(aliases.contracts[0].payload.partyToAlias.textMap);
+      console.log(`WOOHOOO`);
+    }
+  }, [aliases, aliasToParty, partyToAlias]);
+
+  function toParty(alias){
+    return alias in aliasToParty ? aliasToParty[alias] : alias;
+  }
+  function toAlias(party){
+    return party in partyToAlias ? partyToAlias[party] : party;
+  }
+  return [toAlias, toParty];
 }
 
 function UserProvider({ children }) {
@@ -103,4 +127,4 @@ function signOut(event, dispatch, history) {
   history.push("/login");
 }
 
-export { UserProvider, useUserState, useUserDispatch, loginUser, loginDablUser, signOut, useWellKnownParties};
+export { UserProvider, useUserState, useUserDispatch, loginUser, loginDablUser, signOut, useAliases, useWellKnownParties};

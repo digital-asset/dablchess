@@ -72,7 +72,7 @@ start_all: start_daml_server start_operator start_ui_server
 stop_all: stop_daml_server stop_operator stop_ui_server
 
 clean:
-	rm -rf $(state_dir) $(js_bindings_dir) package.json
+	rm -rf $(state_dir) $(js_bindings_dir)
 
 # Release
 

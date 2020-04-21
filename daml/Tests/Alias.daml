@@ -1,0 +1,58 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.Alias where
+
+import Alias
+
+import DA.Next.Map qualified as M
+import DA.Next.Set qualified as S
+
+userCanCreateAlaises = scenario do
+  alice <- getParty "Alice"
+  operator <- getParty "Ref"
+  let publicParty = operator  -- Keep it simple for the tests.
+
+  aliases <- submit operator do
+              create Aliases with
+                aliasToParty = M.empty
+                partyToAlias = M.empty
+                members = S.empty
+                ..
+
+  -- Can't be empty
+  submitMustFail alice do
+                    create AliasRequest with
+                      user = alice
+                      alias = ""
+                      operator
+
+  aliasRequest <- submit alice do
+                    create AliasRequest with
+                      user = alice
+                      alias = "Alice the Great"
+                      operator
+
+  aliases' <- submit operator do
+          exercise aliases ProcessRequest with requestId = aliasRequest
+
+  submit alice do
+    (_, aliasMaps) <- fetchByKey @Aliases operator
+    assertMsg "Alice can see the main map and has an alias" $ M.member alice aliasMaps.partyToAlias
+
+  bob <- getParty "Bob"
+  duplicateAliasRequest <- submit bob do
+                            create AliasRequest with
+                              user = bob
+                              alias = "Alice the Great"
+                              operator
+
+  aliases'' <- submit operator do
+          exercise aliases' ProcessRequest with requestId = duplicateAliasRequest
+
+  submit bob do
+    (_, aliasMaps) <- fetchByKey @Aliases operator
+    assertMsg "Bob can see the main map but doesn't have an alias." $ not $ M.member bob aliasMaps.partyToAlias
+
+  return ()

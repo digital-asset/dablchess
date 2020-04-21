@@ -2,7 +2,7 @@ import React from 'react';
 import { useLedger } from "@daml/react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormLabel
        , Radio, RadioGroup, TextField, } from '@material-ui/core';
-import { useUserState } from "../../../../context/UserContext";
+import { useUserState, useWellKnownParties } from "../../../../context/UserContext";
 import { GameProposal } from "@daml-ts/chess-0.2.0/lib/Chess";
 
 export default function NewGameDialog({open, handleClose}) {
