@@ -6,7 +6,8 @@ bot_version := $(shell cd operator_bot && poetry version | cut -f 2 -d ' ')
 ui_version := $(shell cd ui && node -p "require(\"./package.json\").version")
 
 state_dir := .dev
-daml_build_log := $(state_dir)/daml_build.log
+daml_build_log = $(state_dir)/daml_build.log
+daml_codegen_log := $(state_dir)/daml_codegen.log
 sandbox_pid := $(state_dir)/sandbox.pid
 sandbox_log := $(state_dir)/sandbox.log
 
@@ -18,17 +19,21 @@ yarn_build_log := $(state_dir)/yarn_build.log
 yarn_pid := $(state_dir)/yarn.pid
 yarn_log := $(state_dir)/yarn.log
 
+js_bindings_dir := daml-ts
+
 ### DAML server
 .PHONY: clean stop_daml_server stop_operator stop_yarn_server
 
 $(state_dir):
 	mkdir $(state_dir)
 
-$(daml_build_log): $(state_dir)
-	grep -v "//" .package.json > package.json; \
-	(daml build && daml codegen ts -o daml-ts -p package.json .daml/dist/chess-$(dar_version).dar) > $(daml_build_log)
+$(daml_build_log): |$(state_dir)
+	daml build > $(daml_build_log)
 
-$(sandbox_pid): $(daml_build_log)
+$(js_bindings_dir):
+	daml codegen js -o $(js_bindings_dir) .daml/dist/chess-$(dar_version).dar > $(daml_codegen_log)
+
+$(sandbox_pid): |$(daml_build_log)
 	daml start --start-navigator "no" > $(sandbox_log) & echo "$$!" > $(sandbox_pid)
 
 start_daml_server: $(sandbox_pid)
@@ -41,7 +46,7 @@ stop_daml_server:
 $(operator_bot_dir):
 	cd operator_bot && poetry install && poetry build
 
-$(operator_pid): $(state_dir) $(operator_bot_dir)
+$(operator_pid): |$(state_dir) $(operator_bot_dir)
 	cd operator_bot && (DAML_LEDGER_URL=localhost:6865 poetry run python bot/operator_bot.py > ../$(operator_log) & echo "$$!" > ../$(operator_pid))
 
 start_operator: $(operator_pid)
@@ -51,10 +56,10 @@ stop_operator:
 
 ### UI server
 
-$(yarn_build_log): $(daml_build_log)
-	(yarn install && yarn workspaces run build) > $(yarn_build_log)
+$(yarn_build_log): |$(daml_build_log) $(js_bindings_dir)
+	cd ui && (yarn install > ../$(yarn_build_log))
 
-$(yarn_pid): $(state_dir) $(yarn_build_log)
+$(yarn_pid): |$(state_dir) $(yarn_build_log)
 	cd ui && (yarn start > ../$(yarn_log) & echo "$$!" > ../$(yarn_pid))
 
 start_ui_server: $(yarn_pid)
@@ -62,12 +67,12 @@ start_ui_server: $(yarn_pid)
 stop_ui_server:
 	pkill node && rm -f $(yarn_pid) $(yarn_log)
 
-start_all : start_daml_server start_operator start_ui_server
+start_all: start_daml_server start_operator start_ui_server
 
-stop_all : stop_daml_server stop_operator stop_ui_server
+stop_all: stop_daml_server stop_operator stop_ui_server
 
 clean:
-	rm -rf $(state_dir) daml-ts package.json
+	rm -rf $(state_dir) $(js_bindings_dir) package.json
 
 # Release
 
