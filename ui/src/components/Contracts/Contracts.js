@@ -1,8 +1,8 @@
 import React from "react";
-import { useExercise } from "@daml/react";
+import { useLedger } from "@daml/react";
 import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell , TableBody } from "@material-ui/core";
 import { useStyles } from "./styles";
-import { ActiveSideOfGame, GameProposal, PassiveSideOfGame } from "@daml-ts/chess-0.1.0/lib/Chess";
+import { ActiveSideOfGame, GameProposal, PassiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
 import { useUserState } from "../../context/UserContext";
 import NewGameDialog from "./components/NewGameDialog/NewGameDialog";
 import ChessBoardDialog from "./components/ChessBoardDialog/ChessBoardDialog";
@@ -25,16 +25,12 @@ function GameProposalRow({gameProposal}) {
 
   const userState = useUserState();
   const classes = useStyles();
+  const ledger = useLedger();
 
-  const exerciseAccept = useExercise(GameProposal.Accept);
-  function acceptGameProposal(){
+  async function acceptGameProposal(){
     console.log("Accepting game proposal:" + gameProposal.contractId);
-    return exerciseAccept(gameProposal.contractId, {});
-    /*
-    const [choiceReturnValue, events] = ledger.exercise(GameProposal.Accept, gameProposal.contractId, {});
-    console.log("After accepting proposal " + JSON.stringify(choiceReturnValue));
-    console.log("After accepting proposal events" + JSON.stringify(events));
-    */
+    const [choiceReturnValue, events] = await ledger.exercise(GameProposal.Accept, gameProposal.contractId, {});
+    console.log(`After accepting game proposal ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
   return (
@@ -57,8 +53,7 @@ function ActiveSideOfGameRow({activeSideOfGame}) {
   let ap = activeSideOfGame.payload;
 
   const classes = useStyles();
-  const exerciseClaimDraw = useExercise(ActiveSideOfGame.ClaimDraw);
-  const exerciseForfeit = useExercise(ActiveSideOfGame.Forfeit);
+  const ledger = useLedger();
   const [openChessBoard, setOpenChessBoard] = React.useState(false);
 
   function handleClose() {
@@ -69,13 +64,16 @@ function ActiveSideOfGameRow({activeSideOfGame}) {
     setOpenChessBoard(true);
   }
 
-  function claimDraw(){
+  async function claimDraw(){
     console.log("claiming a draw " + activeSideOfGame.contractId);
-    return exerciseClaimDraw(activeSideOfGame.contractId, {});
+    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.ClaimDraw, activeSideOfGame.contractId, {});
+    console.log(`After claiming draw ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
+
   }
-  function forfeit(){
+  async function forfeit(){
     console.log("forfeiting " + activeSideOfGame.contractId);
-    return exerciseForfeit(activeSideOfGame.contractId, {});
+    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.Forfeit, activeSideOfGame.contractId, {});
+    console.log(`After forfeiting ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
   return (
@@ -102,17 +100,18 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
   let pp = passiveSideOfGame.payload;
 
   const classes = useStyles();
-  const exerciseAskForADraw = useExercise(PassiveSideOfGame.AskForADraw);
-  const exerciseResign = useExercise(PassiveSideOfGame.Resign);
+  const ledger = useLedger();
 
-  function askForADraw(){
+  async function askForADraw(){
     console.log("asking for a draw " + passiveSideOfGame.contractId);
-    return exerciseAskForADraw(passiveSideOfGame.contractId, {});
+    const [choiceReturnValue, events] = await ledger.exercise(PassiveSideOfGame.AskForADraw, passiveSideOfGame.contractId, {});
+    console.log(`After asking for a draw ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
-  function resign(){
+  async function resign(){
     console.log("resigning " + passiveSideOfGame.contractId);
-    return exerciseResign(passiveSideOfGame.contractId, {});
+    const [choiceReturnValue, events] = await ledger.exercise(PassiveSideOfGame.Resign, passiveSideOfGame.contractId, {});
+    console.log(`After resigning ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
   const [openChessBoard, setOpenChessBoard] = React.useState(false);
@@ -173,7 +172,6 @@ function GameResultRow({gameResult}) {
 export default function Contracts({ gameProposals, activeGames, passiveGames, gameResults  }) {
 
   const classes = useStyles();
-
   const [newGameDialogOpen, setOpenNewGameDialog] = React.useState(false);
 
   return (

@@ -1,11 +1,9 @@
 import React from 'react';
+import { useLedger } from "@daml/react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormLabel
        , Radio, RadioGroup, TextField, } from '@material-ui/core';
-//import DialogContentText from '@material-ui/core/DialogContentText';
-import { wsBaseUrl, httpBaseUrl } from "../../../../config";
 import { useUserState } from "../../../../context/UserContext";
-import Ledger from "@daml/ledger";
-import { GameProposal } from "@daml-ts/chess-0.1.0/lib/Chess";
+import { GameProposal } from "@daml-ts/chess-0.2.0/lib/Chess";
 
 export default function NewGameDialog({open, handleClose}) {
 
@@ -14,6 +12,16 @@ export default function NewGameDialog({open, handleClose}) {
   let opponentTextInput = React.createRef();
   let operatorTextInput = React.createRef();
   const [side, setSide] = React.useState("White");
+  const ledger = useLedger();
+
+  async function proposeGame(args){
+    try {
+      let gameProposalContract = await ledger.create(GameProposal, args);
+      console.log("We created a game: " + JSON.stringify(gameProposalContract));
+    } catch(error) {
+      alert("Error creating a gameProposal" + error + " " + JSON.stringify(args));
+    }
+  }
 
   function onClose(proposed){
     // User actually submitted the request.
@@ -25,13 +33,7 @@ export default function NewGameDialog({open, handleClose}) {
                               , desiredSide:side                        // in JS this has to be a string.
                               };
       console.log("A game proposal args:" + JSON.stringify(gameProposalArgs));
-      try {
-        let ledger = new Ledger({token:user.token, httpBaseUrl:httpBaseUrl, wsBaseUrl:wsBaseUrl});
-        let gameProposalContract = ledger.create(GameProposal, gameProposalArgs);
-        console.log("We created a game: " + JSON.stringify(gameProposalContract));
-      } catch(error) {
-        alert("Error creating a gameProposal" + error + " " + JSON.stringify(gameProposalArgs));
-      }
+      proposeGame(gameProposalArgs);
     }
 
     handleClose()

@@ -1,8 +1,8 @@
 import React from "react";
 import Chessboard from "chessboardjsx";
 import { Dialog, DialogTitle } from "@material-ui/core";
-import { useExercise } from "@daml/react";
-import { ActiveSideOfGame } from "@daml-ts/chess-0.1.0/lib/Chess";
+import { useLedger } from "@daml/react";
+import { ActiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
 import { useStyles } from "./styles";
 
 export default function ChessBoardDialog({open, onClose, game, active, contractId}) {
@@ -15,8 +15,7 @@ export default function ChessBoardDialog({open, onClose, game, active, contractI
   // Tint these by 3/4
   let visibleDarkStyle = { backgroundColor: 'rgb(135, 102, 74)'};
   let visibleLightStyle = { backgroundColor: 'rgb(210, 189, 158)'};
-
-  const exerciseMove = useExercise(ActiveSideOfGame.Move);
+  const ledger = useLedger();
   let position = {};
   let squareStyles = {};
   let board = game.pieces.textMap;
@@ -34,20 +33,28 @@ export default function ChessBoardDialog({open, onClose, game, active, contractI
       position[coord] = pl;
     }
   }
+
+  async function move(contractId, args){
+    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.Move, contractId, args);
+    console.log(`After moving ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
+  }
+
   function onDrop({sourceSquare, targetSquare, piece}){
     delete position[sourceSquare];
     position[targetSquare] = piece;
-    let move = exerciseMove(contractId, { from : sourceSquare.toUpperCase()
-                                        , to : targetSquare.toUpperCase()
-                                        });
-                                        //, promote : { tag : "None", value:null } });    // TODO
-    console.log(`move: ${move}`);
+    let contractArgs = { from : sourceSquare.toUpperCase()
+                       , to : targetSquare.toUpperCase()
+                       };
+                       //, promote : { tag : "None", value:null } });    // TODO
+    move(contractId, contractArgs);
     onClose();
   }
+
   function allowDrag({_piece, _sourceSquare }){
     console.log(`allowDrag ${active}`);
     return active;
   }
+
   return (
     <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} maxWidth='md' fullWidth={true} >
       <DialogTitle id="simple-dialog-title">Move</DialogTitle>

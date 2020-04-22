@@ -1,6 +1,6 @@
-sdk-version: 0.13.55
+sdk-version: 1.0.0
 name: chess
-version: 0.1.0
+version: 0.2.0
 source: daml
 init-script: InitScript:setup
 parties:
