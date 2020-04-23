@@ -2,7 +2,8 @@ import React from 'react';
 import { useLedger } from "@daml/react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormLabel
        , Radio, RadioGroup, TextField, } from '@material-ui/core';
-import { useUserState, useWellKnownParties } from "../../../../context/UserContext";
+import { Autocomplete } from '@material-ui/lab';
+import { useNaiveAliases, useUserState, useWellKnownParties } from "../../../../context/UserContext";
 import { GameProposal } from "@daml-ts/chess-0.2.0/lib/Chess";
 
 export default function NewGameDialog({open, handleClose}) {
@@ -13,7 +14,9 @@ export default function NewGameDialog({open, handleClose}) {
   let opponentTextInput = React.createRef();
   const [side, setSide] = React.useState("White");
   const ledger = useLedger();
+  const [aliasToParty] = useNaiveAliases();
 
+  let aliasesAsArray = Object.entries(aliasToParty).map(([alias, party]) => { return {alias, party} });
   async function proposeGame(args){
     try {
       let gameProposalContract = await ledger.create(GameProposal, args);
@@ -26,16 +29,16 @@ export default function NewGameDialog({open, handleClose}) {
   function onClose(proposed){
     // User actually submitted the request.
     if(proposed && !!gameIdTextInput.value && !!opponentTextInput.value ){
+      let opponent = opponentTextInput.value in aliasToParty ? aliasToParty[opponentTextInput.value] : opponentTextInput.value;
       let gameProposalArgs =  { gameId:gameIdTextInput.value
                               , proposer:user.party
-                              , opponent:opponentTextInput.value
+                              , opponent:opponent
                               , operator:wellKnownParties.userAdminParty
                               , desiredSide:side                        // in JS this has to be a string.
                               };
       console.log("A game proposal args:" + JSON.stringify(gameProposalArgs));
       proposeGame(gameProposalArgs);
     }
-
     handleClose()
   }
   return (
@@ -44,7 +47,7 @@ export default function NewGameDialog({open, handleClose}) {
         <DialogTitle id="form-dialog-title">Propose a game</DialogTitle>
         <DialogContent>
           <TextField
-            autoFocus
+            autoFocus={true}
             margin="dense"
             id="gameId"
             placeholder="Enter a unique id"
@@ -52,14 +55,20 @@ export default function NewGameDialog({open, handleClose}) {
             fullWidth
             inputRef={e => (gameIdTextInput = e)}
           />
-          <TextField
-            autoFocus
-            margin="dense"
-            id="opponent"
-            placeholder="Who do you want to play against?"
-            label="Opponent"
-            fullWidth
-            inputRef={e => (opponentTextInput = e)}
+          <Autocomplete
+            id="opponent-autocomplete"
+            autoComplete={true}
+            options={aliasesAsArray}
+            getOptionLabel={(option) => option.alias}
+            renderInput={(params) => <TextField
+                                        {...params}
+                                        margin="dense"
+                                        id="opponent"
+                                        placeholder="Who do you want to play against?"
+                                        label="Opponent"
+                                        fullWidth
+                                        inputRef={e => (opponentTextInput = e)}
+                                        /> }
           />
           <FormControl component="fieldset"  >
             <FormLabel component="legend">Desired Side</FormLabel>

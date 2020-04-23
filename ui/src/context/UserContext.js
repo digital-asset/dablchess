@@ -35,19 +35,23 @@ function useWellKnownParties(){
   return wellKnownParties;
 }
 
-function useAliases() {
+function useNaiveAliases() {
   const [aliasToParty, setAliasToParty] = useState({});
   const [partyToAlias, setPartyToAlias] = useState({});
   const aliases = useStreamQuery(Aliases);
   useEffect(() => {
-    console.log(`We know of the following aliases: ${JSON.stringify(aliases)} ${!aliases.loading} ${aliases.contracts.length}`);
     if(!aliases.loading && aliases.contracts.length > 0){
       setAliasToParty(aliases.contracts[0].payload.aliasToParty.textMap);
       setPartyToAlias(aliases.contracts[0].payload.partyToAlias.textMap);
-      console.log(`WOOHOOO`);
+      console.log(`Updated aliases ${JSON.stringify(aliasToParty)} ${JSON.stringify(partyToAlias)}`);
     }
   }, [aliases, aliasToParty, partyToAlias]);
 
+  return [aliasToParty, partyToAlias];
+}
+
+function useAliases() {
+  const [aliasToParty, partyToAlias] = useNaiveAliases();
   function toParty(alias){
     return alias in aliasToParty ? aliasToParty[alias] : alias;
   }
@@ -127,4 +131,4 @@ function signOut(event, dispatch, history) {
   history.push("/login");
 }
 
-export { UserProvider, useUserState, useUserDispatch, loginUser, loginDablUser, signOut, useAliases, useWellKnownParties};
+export { UserProvider, useUserState, useUserDispatch, loginUser, loginDablUser, signOut, useAliases, useNaiveAliases, useWellKnownParties};

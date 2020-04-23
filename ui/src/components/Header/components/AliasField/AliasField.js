@@ -15,7 +15,7 @@ export default function AliasField(){
   const [toAlias] = useAliases();
   useEffect(() => {
     setAlias(toAlias(userState.party));
-  }, [toAlias, userState]);
+  }, []); // Ignore updates to toAlias, userState
 
   async function onAliasEnter(newAliasValue){
     let args = { user : userState.party
@@ -24,18 +24,25 @@ export default function AliasField(){
                };
     let aliasRequest = await ledger.create(AliasRequest, args);
     console.log(`Sent an aliasRequest ${JSON.stringify(args)} -> ${JSON.stringify(aliasRequest)}`);
-    //setAlias(newAliasValue);
+    //Do not setAlias(newAliasValue) wait until we get a confirm.
   };
 
-  console.log(`What are my classes ${'textFieldUnderline' in classes} \n ${JSON.stringify(classes)}`);
   return (
     <TextField
       id="alias"
+      InputProps={{
+        classes: {
+          underline: classes.textFieldUnderline,
+          input:classes.textField
+        },
+      }}
       className={classes.textField}
       helperText="Enter an alias to for easier identification."
       // How can I create the effect that this alias has been set?
       value={alias}
-      onChange={e => setAlias(e.target.value)}
+      onChange={e => {
+        setAlias(e.target.value)}
+      }
       onKeyDown={e => {
         if (e.key === "Enter" && !!e.target.value) {
           onAliasEnter(e.target.value);
