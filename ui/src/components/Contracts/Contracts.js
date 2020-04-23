@@ -26,7 +26,7 @@ function GameProposalRow({gameProposal}) {
   const userState = useUserState();
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias, toParty] = useAliases(e => {return});
+  const [toAlias] = useAliases(e => {return});
 
   async function acceptGameProposal(){
     console.log("Accepting game proposal:" + gameProposal.contractId);
@@ -55,7 +55,7 @@ function ActiveSideOfGameRow({activeSideOfGame}) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias, toParty] = useAliases(e => {return});
+  const [toAlias] = useAliases(e => {return});
   const [openChessBoard, setOpenChessBoard] = React.useState(false);
 
   function handleClose() {
@@ -103,7 +103,7 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias, toParty] = useAliases(e => {return});
+  const [toAlias] = useAliases(e => {return});
 
   async function askForADraw(){
     console.log("asking for a draw " + passiveSideOfGame.contractId);
@@ -151,7 +151,7 @@ function GameResultRow({gameResult}) {
 
   const classes = useStyles();
   const userState = useUserState();
-  const [toAlias, toParty] = useAliases(e => {return});
+  const [toAlias] = useAliases(e => {return});
   let gp = gameResult.payload;
   let gameState="No winner!";
   switch(gp.drawOrWinner.tag){
