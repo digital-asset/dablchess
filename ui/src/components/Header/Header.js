@@ -1,12 +1,24 @@
 import React from "react";
 import { withRouter } from "react-router-dom";
-import { AppBar, Toolbar, IconButton, Typography } from "@material-ui/core";
+import { AppBar, Button, IconButton, Toolbar, Typography } from "@material-ui/core";
 import { ExitToApp, Refresh } from "@material-ui/icons";
 import useStyles from "./styles";
 import { useUserDispatch, useUserState, signOut } from "../../context/UserContext";
 import AliasField from "./components/AliasField/AliasField";
+import NewGameDialog from "./components/NewGameDialog/NewGameDialog";
 import { useReload } from "@daml/react";
 
+function NewGameButton({text, onClick}){
+  return  (<Button
+            backgroundColor="primary"
+            size="small"
+            className="px-2"
+            variant="contained"
+            onClick={onClick}
+            >{text}
+          </Button>
+  );
+}
 
 function Header({ history }) {
   const classes = useStyles();
@@ -15,6 +27,7 @@ function Header({ history }) {
   const userState = useUserState();
   const userDispatch = useUserDispatch();
   const reload = useReload();
+  const [newGameDialogOpen, setOpenNewGameDialog] = React.useState(false);
 
   return (
     <AppBar position="fixed" className={classes.appBar}>
@@ -22,6 +35,8 @@ function Header({ history }) {
         <Typography variant="h6" weight="medium" className={classes.logotype}>
           DABL Chess
         </Typography>
+        <NewGameButton text="New Game" onClick={()=>setOpenNewGameDialog(true)} />
+        <NewGameDialog open={newGameDialogOpen} handleClose={()=>setOpenNewGameDialog(false)}/>
         <div className={classes.grow} />
         <AliasField />
                                        {/* Do not set this vvvvv one to an Alias */}

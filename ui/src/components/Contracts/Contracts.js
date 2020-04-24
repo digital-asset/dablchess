@@ -4,7 +4,6 @@ import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell , Tabl
 import { useStyles } from "./styles";
 import { ActiveSideOfGame, GameProposal, PassiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
 import { useAliases, useUserState } from "../../context/UserContext";
-import NewGameDialog from "./components/NewGameDialog/NewGameDialog";
 import ChessBoardDialog from "./components/ChessBoardDialog/ChessBoardDialog";
 
 function MyButton({text, onClick}){
@@ -176,14 +175,11 @@ function GameResultRow({gameResult}) {
 export default function Contracts({ gameProposals, activeGames, passiveGames, gameResults  }) {
 
   const classes = useStyles();
-  const [newGameDialogOpen, setOpenNewGameDialog] = React.useState(false);
 
   return (
     <>
       <Grid container spacing={4}>
       <Grid item xs={12}>
-        <MyButton text="New Game" onClick={()=>setOpenNewGameDialog(true)} />
-        <NewGameDialog open={newGameDialogOpen} handleClose={()=>setOpenNewGameDialog(false)}/>
         <Table size="small">
           <TableHead>
             <TableRow className={classes.tableRow}>
