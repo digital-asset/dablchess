@@ -56,7 +56,7 @@ def main():
         logging.info(f'OperatorRole for {gameId} ? {res}')
         assert len(res) == 1
         (orId, _operatorRoleParams) = res.popitem()
-        return client.submit_exercise(orId, 'AdvancePlay')
+        return client.submit_exercise(orId, 'AdvancePlay', {'activeActionId':event.cid})
 
     @client.ledger_created(CHESS.Surrender)
     def acknowledge_surrender(event):  # pylint: disable=unused-variable

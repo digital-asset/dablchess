@@ -246,8 +246,12 @@ template ActiveAction
   where
     signatory operator
 
-    key (operator, gameId) : (Party, GameId)
-    maintainer key._1
+-- We track the return type to make tests easier to undertand.
+-- It isn't necessary for the full operation of the game.
+data AdvanceResult
+  = StateHasMoved   -- Duplicate Move/ClaimDraw's, need to clean up the rest
+  | GameEnd (ContractId GameResult)
+  | NextState GameContractIds
 
 template OperatorRole
   with
@@ -261,72 +265,77 @@ template OperatorRole
 
     controller operator can
       -- operator's reaction to the existence of an ActiveAction
-      nonconsuming AdvancePlay : Either (ContractId GameResult) GameContractIds
+      nonconsuming AdvancePlay : AdvanceResult
+        with
+          activeActionId : ContractId ActiveAction
         do
           -- Look up move information from ActiveAction and archive it
-          (amId, action) <- fetchByKey @ActiveAction (operator, gameId)
-
+          action <- fetch activeActionId
           let player = action.player
               opponent = action.opponent
               move = action.move
-          exercise amId Archive
+          exercise activeActionId Archive
 
           -- figure out global state
-          (activeId, activeState) <- fetchByKey @ActiveSideOfGame (operator, gameId, player, action.flag)
-          (passiveId, passiveState) <- fetchByKey @PassiveSideOfGame (operator, gameId, opponent, action.flag)
-          let gameState = if activeState.side == White
-                          then joinGameStates activeState.active passiveState.passive
-                          else joinGameStates passiveState.passive activeState.active
-              moveSide = activeState.side
-          case move of
-            None  ->  -- claimDraw?
-              case checkDraw gameState of
-                None ->
-                  do -- not a draw
-                    return $ Right (activeId, passiveId)
-                (Some drawType) ->
-                  do
-                    let drawOrWinner = Draw drawType
-                    (gameStartId, gameStart) <- fetchByKey @Game (operator, gameId)
-                    gameResultId <- exercise gameStartId End with game = Some gameState, ..
-                    exercise activeId DeclareWinnerActive with result = gameResultId
-                    exercise passiveId DeclareWinnerPassive with result = gameResultId
-                    return $ Left gameResultId
+          activeIdOpt <- lookupByKey @ActiveSideOfGame (operator, gameId, player, action.flag)
+          case activeIdOpt of
+            None  -> do return StateHasMoved
+            Some activeId -> do
+              activeState <- fetch activeId
+              (passiveId, passiveState) <- fetchByKey @PassiveSideOfGame (operator, gameId, opponent, action.flag)
+              let gameState = if activeState.side == White
+                              then joinGameStates activeState.active passiveState.passive
+                              else joinGameStates passiveState.passive activeState.active
+                  moveSide = activeState.side
+              case move of
+                None  ->  -- claimDraw?
+                  case checkDraw gameState of
+                    None ->
+                      do -- not a draw
+                        return $ NextState (activeId, passiveId)
+                    (Some drawType) ->
+                      do
+                        let drawOrWinner = Draw drawType
+                        (gameStartId, gameStart) <- fetchByKey @Game (operator, gameId)
+                        gameResultId <- exercise gameStartId End with game = Some gameState, ..
+                        exercise activeId DeclareWinnerActive with result = gameResultId
+                        exercise passiveId DeclareWinnerPassive with result = gameResultId
+                        return $ GameEnd gameResultId
 
-            Some m ->
-              case tryMove gameState m of
-                -- determine potential winner
-                DrawOrWinner dow ->
-                  let drawOrWinner =
-                        case dow of
-                          Draw dt -> Draw dt
-                          Winner side -> if side == moveSide then Winner activeState.player else Winner activeState.opponent
-                      game = (gameState with moves = m :: gameState.moves)
-                  in
-                  do
-                    (gameStartId, gameStart) <- fetchByKey @Game (operator, gameId)
-                    gameResultId <- exercise gameStartId End with game = Some game, ..
-                    exercise activeId DeclareWinnerActive with result = gameResultId
-                    exercise passiveId DeclareWinnerPassive with result = gameResultId
-                    return $ Left gameResultId
-                Error e ->
-                  do
-                    --abort e  -- What mechanism exists to warn to alert the user?
-                    let () = traceRaw ("Error: " <> e) ()
-                    return $ Right (activeId, passiveId)
-                -- alternate states
-                NewState newJoinedState ->
-                  let whiteState = splitGameStateOfSide White newJoinedState
-                      blackState = splitGameStateOfSide Black newJoinedState
-                      (active, passive) =
-                        case moveSide of
-                          White -> (blackState, whiteState)
-                          Black -> (whiteState, blackState)
-                  in
-                  do
-                    passiveId' <- exercise activeId Inactivate with passive
-                    activeId' <- exercise passiveId Activate with active
-                    return $ Right (activeId', passiveId')
+                Some m ->
+                  case tryMove gameState m of
+                    -- determine potential winner
+                    DrawOrWinner dow ->
+                      let drawOrWinner =
+                            case dow of
+                              Draw dt -> Draw dt
+                              Winner side -> if side == moveSide then Winner activeState.player else Winner activeState.opponent
+                          game = (gameState with moves = m :: gameState.moves)
+                      in
+                      do
+                        (gameStartId, gameStart) <- fetchByKey @Game (operator, gameId)
+                        gameResultId <- exercise gameStartId End with game = Some game, ..
+                        exercise activeId DeclareWinnerActive with result = gameResultId
+                        exercise passiveId DeclareWinnerPassive with result = gameResultId
+                        return $ GameEnd gameResultId
+                    Error e ->
+                      do
+                        --abort e  -- What mechanism exists to warn to alert the user?
+                        let () = traceRaw ("Error: " <> e) ()
+                        return $ NextState (activeId, passiveId)
+                    -- alternate states
+                    NewState newJoinedState ->
+                      let whiteState = splitGameStateOfSide White newJoinedState
+                          blackState = splitGameStateOfSide Black newJoinedState
+                          (active, passive) =
+                            case moveSide of
+                              White -> (blackState, whiteState)
+                              Black -> (whiteState, blackState)
+                      in
+                      do
+                        passiveId' <- exercise activeId Inactivate with passive
+                        activeId' <- exercise passiveId Activate with active
+                        return $ NextState (activeId', passiveId')
 
       -- operator's reaction to the existence of an Surrender
       nonconsuming AcknowledgeSurrender : ContractId GameResult

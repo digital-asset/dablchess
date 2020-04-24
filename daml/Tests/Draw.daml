@@ -25,8 +25,8 @@ testOfferDraw = scenario do
 claimDraw party operator operatorRole game = do
   case game of
     Right (a,_) -> do
-      _moveId <- submit party do exercise a ClaimDraw
-      submit operator do exercise operatorRole AdvancePlay
+      activeId <- submit party do exercise a ClaimDraw
+      pareState $ submit operator do exercise operatorRole AdvancePlay with activeActionId = activeId
     Left _ -> abort "Should be in play"
 
 testThreeRepeat = scenario do

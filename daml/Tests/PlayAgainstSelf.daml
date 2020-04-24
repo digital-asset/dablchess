@@ -8,6 +8,7 @@ import DA.Assert
 
 import Chess
 import Types
+import Tests.Init
 
 -- You should be able to play against yourself.
 
@@ -38,14 +39,13 @@ self = do
   passive.player === alice
   passive.opponent === alice
 
-  _activeActionId <- submit alice do
+  activeActionId <- submit alice do
     exercise activeSideOfGameId Move with
                                   from = D2
                                   to = D4
                                   promote = None
 
-  game <- submit operator do
-    exercise operatorRole AdvancePlay
+  game <- pareState $ submit operator do exercise operatorRole AdvancePlay with activeActionId
 
   (a,p) <- case game of
               Left _result -> abort "The game is not over!"
