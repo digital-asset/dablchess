@@ -1,11 +1,9 @@
 import React from "react";
 import { withRouter } from "react-router-dom";
 import { AppBar, Toolbar, IconButton, Typography } from "@material-ui/core";
-import { Menu, ExitToApp, ArrowBack, Refresh } from "@material-ui/icons";
-import classNames from "classnames";
+import { ExitToApp, Refresh } from "@material-ui/icons";
 import useStyles from "./styles";
-import { useLayoutState, useLayoutDispatch, toggleSidebar } from "../../context/LayoutContext";
-import { useUserState, useUserDispatch, signOut } from "../../context/UserContext";
+import { useUserDispatch, useUserState, signOut } from "../../context/UserContext";
 import AliasField from "./components/AliasField/AliasField";
 import { useReload } from "@daml/react";
 
@@ -14,8 +12,6 @@ function Header({ history }) {
   const classes = useStyles();
 
   // global
-  const layoutState = useLayoutState();
-  const layoutDispatch = useLayoutDispatch();
   const userState = useUserState();
   const userDispatch = useUserDispatch();
   const reload = useReload();
@@ -23,31 +19,6 @@ function Header({ history }) {
   return (
     <AppBar position="fixed" className={classes.appBar}>
       <Toolbar className={classes.toolbar}>
-        <IconButton
-          color="inherit"
-          onClick={() => toggleSidebar(layoutDispatch)}
-          className={classNames(classes.headerMenuButton, classes.headerMenuButtonCollapse)}
-        >
-          {layoutState.isSidebarOpened ? (
-            <ArrowBack
-              classes={{
-                root: classNames(
-                  classes.headerIcon,
-                  classes.headerIconCollapse,
-                ),
-              }}
-            />
-          ) : (
-            <Menu
-              classes={{
-                root: classNames(
-                  classes.headerIcon,
-                  classes.headerIconCollapse,
-                ),
-              }}
-            />
-          )}
-        </IconButton>
         <Typography variant="h6" weight="medium" className={classes.logotype}>
           DABL Chess
         </Typography>
