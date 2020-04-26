@@ -58,7 +58,7 @@ moveFun mv ds =
       stateCounts = increment (toOrd ngs) ds.stateCounts
 
 
-checkDraw : GameState -> Optional DrawType
+checkDraw : GameState -> Optional (DrawType Side)
 checkDraw gs =
   let is = initState ()
       ids = DrawState with

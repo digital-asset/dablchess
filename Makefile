@@ -57,7 +57,7 @@ stop_operator:
 ### UI server
 
 $(yarn_build_log): |$(daml_build_log) $(js_bindings_dir)
-	cd ui && (yarn install > ../$(yarn_build_log))
+	cd ui && (yarn install --force --frozen-lockfile > ../$(yarn_build_log))
 
 $(yarn_pid): |$(state_dir) $(yarn_build_log)
 	cd ui && (yarn start > ../$(yarn_log) & echo "$$!" > ../$(yarn_pid))

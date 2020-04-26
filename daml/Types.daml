@@ -73,15 +73,15 @@ data SplitGameState = SplitGameState with
   moves : [ChessMove]         -- stack of list moves
     deriving (Eq, Show)
 
-data DrawType
-  = PlayerDraw Side
+data DrawType a
+  = PlayerDraw a
   | Stalemate
   | ThreefoldRepetition
   | FiftyMoveRule
     deriving (Eq, Show)
 
 data DrawOrWinner a
-  = Draw DrawType
+  = Draw (DrawType a)
   | Winner a
     deriving (Eq, Show)
 

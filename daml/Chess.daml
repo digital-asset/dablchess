@@ -128,7 +128,8 @@ template PassiveSideOfGame
       Resign : ContractId Surrender
         do create Surrender with activeSurrender = False, ..
       AskForADraw : ContractId DrawRequest
-        do create DrawRequest with ..
+        do create DrawRequest with requester = player, ..
+
 
 -- It is the active side's turn.
 template ActiveSideOfGame
@@ -197,7 +198,7 @@ template Surrender
 
 template DrawRequest
   with
-    player : Party
+    requester : Party
     operator : Party
     gameId : GameId
     opponent : Party
@@ -205,10 +206,10 @@ template DrawRequest
     -- reveal : Bool -- add?
     flag : Bool
   where
-    signatory operator, player
+    signatory operator, requester
     observer opponent
 
-    key (operator, gameId, player) : (Party, GameId, Party)
+    key (operator, gameId, requester) : (Party, GameId, Party)
     maintainer key._1
 
     controller opponent can
@@ -220,7 +221,7 @@ template DrawRequest
 
 template AcceptedDraw
   with
-    player : Party
+    requester : Party
     operator : Party
     gameId : GameId
     opponent : Party
@@ -237,11 +238,12 @@ template AcceptedDraw
 
 template ActiveAction
   with
-    player : Party
+    player : Party              -- Party who just moved
+    side : Side                 -- their side.
     operator : Party
     gameId : GameId
     opponent : Party
-    move : Optional ChessMove     -- None = ClaimDraw
+    move : Optional ChessMove   -- None = ClaimDraw
     flag : Bool
   where
     signatory operator
@@ -274,6 +276,14 @@ template OperatorRole
           let player = action.player
               opponent = action.opponent
               move = action.move
+              translateDrawType : DrawType Side -> DrawType Party
+              translateDrawType (PlayerDraw s)      = if s == action.side
+                                                      then PlayerDraw player
+                                                      else PlayerDraw opponent
+              translateDrawType Stalemate           = Stalemate
+              translateDrawType ThreefoldRepetition = ThreefoldRepetition
+              translateDrawType FiftyMoveRule       = FiftyMoveRule
+
           exercise activeActionId Archive
 
           -- figure out global state
@@ -295,7 +305,7 @@ template OperatorRole
                         return $ NextState (activeId, passiveId)
                     (Some drawType) ->
                       do
-                        let drawOrWinner = Draw drawType
+                        let drawOrWinner = Draw (translateDrawType drawType)
                         (gameStartId, gameStart) <- fetchByKey @Game (operator, gameId)
                         gameResultId <- exercise gameStartId End with game = Some gameState, ..
                         exercise activeId DeclareWinnerActive with result = gameResultId
@@ -308,7 +318,7 @@ template OperatorRole
                     DrawOrWinner dow ->
                       let drawOrWinner =
                             case dow of
-                              Draw dt -> Draw dt
+                              Draw drawType -> Draw (translateDrawType drawType)
                               Winner side -> if side == moveSide then Winner activeState.player else Winner activeState.opponent
                           game = (gameState with moves = m :: gameState.moves)
                       in
@@ -359,4 +369,4 @@ template OperatorRole
           (adId, acceptedDraw) <- fetchByKey @AcceptedDraw (operator, gameId)
           (gameStartId, _gameStart) <- fetchByKey @Game (operator, gameId)
           exercise adId ArchiveAcceptedDrawbyOperator
-          exercise gameStartId End with game = None, drawOrWinner = Draw (PlayerDraw acceptedDraw.side)
+          exercise gameStartId End with game = None, drawOrWinner = Draw (PlayerDraw acceptedDraw.requester)

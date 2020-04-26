@@ -20,7 +20,7 @@ testOfferDraw = scenario do
   gameResultId <- submit operator do exercise operatorRole AcknowledgeAcceptedDraw
   gameResult <- submit black do fetch gameResultId
 
-  Draw (PlayerDraw Black) === gameResult.drawOrWinner
+  Draw (PlayerDraw black) === gameResult.drawOrWinner
 
 claimDraw party operator operatorRole game = do
   case game of

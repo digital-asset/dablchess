@@ -2,7 +2,7 @@ import React from "react";
 import { useLedger } from "@daml/react";
 import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell , TableBody } from "@material-ui/core";
 import { useStyles } from "./styles";
-import { ActiveSideOfGame, GameProposal, PassiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
+import { ActiveSideOfGame, DrawRequest, GameProposal, PassiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
 import { useAliases, useUserState } from "../../context/UserContext";
 import ChessBoardDialog from "./components/ChessBoardDialog/ChessBoardDialog";
 
@@ -25,7 +25,7 @@ function GameProposalRow({gameProposal}) {
   const userState = useUserState();
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias] = useAliases(e => {return});
+  const [toAlias] = useAliases();
 
   async function acceptGameProposal(){
     console.log("Accepting game proposal:" + gameProposal.contractId);
@@ -42,7 +42,7 @@ function GameProposalRow({gameProposal}) {
         ? (<TableCell className={classes.tablecell}>
             <MyButton text="Accept" onClick={acceptGameProposal} />
           </TableCell>)
-        : (<TableCell className={classes.tablecell}>{toAlias(gp.opponent)} has to accept.</TableCell>)
+        : (<TableCell className={classes.tablecell}>Waiting for {toAlias(gp.opponent)} to accept game request.</TableCell>)
         }
       </TableRow>
   );
@@ -54,7 +54,7 @@ function ActiveSideOfGameRow({activeSideOfGame}) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias] = useAliases(e => {return});
+  const [toAlias] = useAliases();
   const [openChessBoard, setOpenChessBoard] = React.useState(false);
 
   function handleClose() {
@@ -102,7 +102,7 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias] = useAliases(e => {return});
+  const [toAlias] = useAliases();
 
   async function askForADraw(){
     console.log("asking for a draw " + passiveSideOfGame.contractId);
@@ -132,7 +132,7 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
       <TableRow className={classes.tableRow} onClick={onClick}>
         <TableCell className={classes.tableCell}>{pp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{pp.side}</TableCell>
-        <TableCell className={classes.tableCell}>{pp.opponent}</TableCell>
+        <TableCell className={classes.tableCell}>{toAlias(pp.opponent)}</TableCell>
         <TableCell className={classes.tablecell}>
           Waiting for {toAlias(pp.opponent)}'s move.
           <ButtonGroup>
@@ -145,21 +145,81 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
   );
 }
 
+function DrawRequestRow({drawRequest}) {
+  console.log(`Converting an draw request ${drawRequest.contractId}.`);
+  let dp = drawRequest.payload;
+
+  const classes = useStyles();
+  const ledger = useLedger();
+  const userState = useUserState();
+  const [toAlias] = useAliases();
+
+  async function accept(){
+    console.log("accepting draw " + drawRequest.contractId);
+    const [choiceReturnValue, events] = await ledger.exercise(DrawRequest.AcceptDrawRequest, drawRequest.contractId, {});
+    console.log(`After accepting draw ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
+  }
+
+  return (
+    <>
+      <TableRow className={classes.tableRow}>
+        <TableCell className={classes.tableCell}>{dp.gameId}</TableCell>
+        <TableCell className={classes.tableCell}>{dp.side}</TableCell>
+        <TableCell className={classes.tableCell}>{toAlias(dp.player)}</TableCell>
+        { userState.party === dp.opponent
+        ? (<TableCell className={classes.tablecell}>
+            {toAlias(dp.player)} requested a draw:
+            <ButtonGroup>
+              <MyButton text="Accept" onClick={accept} />
+            </ButtonGroup>
+          </TableCell>)
+        : (<TableCell className={classes.tableCell}>You requested a draw.</TableCell>)
+        }
+      </TableRow>
+    </>
+  );
+}
+
 function GameResultRow({gameResult}) {
   console.log(`Converting a gameResult ${gameResult.contractId}.`);
 
   const classes = useStyles();
   const userState = useUserState();
-  const [toAlias] = useAliases(e => {return});
+  const [toAlias] = useAliases();
   let gp = gameResult.payload;
   let gameState="No winner!";
   switch(gp.drawOrWinner.tag){
     case "Winner":
       gameState = gp.drawOrWinner.value + " won!";
       break;
+    case "Draw":
+      switch(gp.drawOrWinner.value.tag){
+        case "PlayerDraw":
+          let drawRequester = gp.drawOrWinner.value.value;
+          if(drawRequester == userState.party){
+            gameState = "Your draw was accepted.";
+          } else{
+            gameState = `You accepted ${drawRequester}'s draw offer`;
+          }
+          break;
+        case "Stalemate":
+          gameState = "Stalemate";
+          break;
+        case "ThreefoldRepition":
+          gameState = "Draw, three fold repition.";
+          break;
+        case "FiftyMoveRole":
+          gameState = "Draw, fifty non capturing nor pawn.";
+          break;
+        default:
+          console.log("Is there a new draw style?");
+          gameState = "Draw"
+          break;
+      };
+      break;
     default:
       console.log("Not implemented gameState : " + JSON.stringify(gp.drawOrWinner));
-      break
+      break;
   };
   return (
       <TableRow className={classes.tableRow}>
@@ -172,7 +232,7 @@ function GameResultRow({gameResult}) {
 }
 
 
-export default function Contracts({ gameProposals, activeGames, passiveGames, gameResults  }) {
+export default function Contracts({ gameProposals, activeGames, passiveGames, drawRequests, gameResults  }) {
 
   const classes = useStyles();
 
@@ -193,7 +253,8 @@ export default function Contracts({ gameProposals, activeGames, passiveGames, ga
             { gameProposals.map(c => <GameProposalRow gameProposal={c} key={"0" + c.contractId}/>) }
             { activeGames.map(c => <ActiveSideOfGameRow activeSideOfGame={c} key={"1" + c.contractId}/>) }
             { passiveGames.map(c => <PassiveSideOfGameRow passiveSideOfGame={c} key={"2" + c.contractId}/>) }
-            { gameResults.map(c => <GameResultRow gameResult={c} key={"3" + c.contractId}/>)}
+            { drawRequests.map(c => <DrawRequestRow drawRequest={c} key={"3" + c.contractId}/>)}
+            { gameResults.map(c => <GameResultRow gameResult={c} key={"4" + c.contractId}/>)}
           </TableBody>
         </Table>
       </Grid>
