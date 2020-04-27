@@ -196,7 +196,7 @@ function GameResultRow({gameResult}) {
       switch(gp.drawOrWinner.value.tag){
         case "PlayerDraw":
           let drawRequester = gp.drawOrWinner.value.value;
-          if(drawRequester == userState.party){
+          if(drawRequester === userState.party){
             gameState = "Your draw was accepted.";
           } else{
             gameState = `You accepted ${drawRequester}'s draw offer`;
