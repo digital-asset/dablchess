@@ -9,14 +9,14 @@ import NewGameDialog from "./components/NewGameDialog/NewGameDialog";
 import { useReload } from "@daml/react";
 
 function NewGameButton({text, onClick}){
-  return  (<Button
-            backgroundColor="primary"
-            size="small"
-            className="px-2"
-            variant="contained"
-            onClick={onClick}
-            >{text}
-          </Button>
+  const classes = useStyles();
+  return (
+    <Button
+      className={classes.newGameButton}
+      variant="contained"
+      onClick={onClick}
+      >{text}
+    </Button>
   );
 }
 
