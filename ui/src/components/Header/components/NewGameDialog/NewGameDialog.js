@@ -3,7 +3,9 @@ import { useLedger } from "@daml/react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormLabel
        , Radio, RadioGroup, TextField, } from '@material-ui/core';
 import { Autocomplete } from '@material-ui/lab';
-import { useNaiveAliases, useUserState, useWellKnownParties } from "../../../../context/UserContext";
+import { useUserState } from "../../../../context/UserContext";
+import { useWellKnownParties } from "../../../../context/WellKnownPartiesContext";
+import { useAliasMaps } from "../../../../context/AliasMapContext";
 import { GameProposal } from "@daml-ts/chess-0.2.0/lib/Chess";
 
 export default function NewGameDialog({open, handleClose}) {
@@ -14,9 +16,9 @@ export default function NewGameDialog({open, handleClose}) {
   let opponentTextInput = React.createRef();
   const [side, setSide] = React.useState("White");
   const ledger = useLedger();
-  const [aliasToParty] = useNaiveAliases();
+  const aliasMap = useAliasMaps();
 
-  let aliasesAsArray = Object.entries(aliasToParty).map(([alias, party]) => { return {alias, party} });
+  let aliasesAsArray = Object.entries(aliasMap.aliasToParty).map(([alias, party]) => { return {alias, party} });
   async function proposeGame(args){
     try {
       let gameProposalContract = await ledger.create(GameProposal, args);
@@ -29,7 +31,7 @@ export default function NewGameDialog({open, handleClose}) {
   function onClose(proposed){
     // User actually submitted the request.
     if(proposed && !!gameIdTextInput.value && !!opponentTextInput.value ){
-      let opponent = opponentTextInput.value in aliasToParty ? aliasToParty[opponentTextInput.value] : opponentTextInput.value;
+      let opponent = aliasMap.toParty(opponentTextInput.value);
       let gameProposalArgs =  { gameId:gameIdTextInput.value
                               , proposer:user.party
                               , opponent:opponent

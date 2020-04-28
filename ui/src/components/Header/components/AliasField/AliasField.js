@@ -1,8 +1,10 @@
 import React, {useEffect, useState} from "react";
 import { TextField } from "@material-ui/core";
 import { useLedger } from "@daml/react";
-import { useAliases, useWellKnownParties,useUserState } from "../../../../context/UserContext";
-import { useStyles } from "./styles";
+import { useUserState } from "../../../../context/UserContext";
+import { useWellKnownParties } from "../../../../context/WellKnownPartiesContext";
+import { useAliasMaps } from "../../../../context/AliasMapContext";
+import useStyles from "./styles";
 import { AliasRequest } from "@daml-ts/chess-0.2.0/lib/Alias";
 
 export default function AliasField(){
@@ -11,12 +13,15 @@ export default function AliasField(){
   const userState = useUserState();
   const wellKnownParties = useWellKnownParties();
   const ledger = useLedger();
-  const [alias, setAlias] = useState('');
-  const [toAlias] = useAliases();
+  const [alias, setAlias] = useState("");
+  const aliasMap = useAliasMaps();
   useEffect(() => {
-    setAlias(toAlias(userState.party));
-  }, []); // Ignore updates to toAlias, userState
+    setAlias(aliasMap.toAlias(userState.party))
+  }, [userState, aliasMap])
 
+  function handleChange(e){
+    setAlias(e.target.value)
+  };
   async function onAliasEnter(newAliasValue){
     let args = { user : userState.party
                , alias : newAliasValue
@@ -26,7 +31,11 @@ export default function AliasField(){
     console.log(`Sent an aliasRequest ${JSON.stringify(args)} -> ${JSON.stringify(aliasRequest)}`);
     //Do not setAlias(newAliasValue) wait until we get a confirm.
   };
-
+  function handleKeyDown(e){
+    if (e.key === "Enter") {
+      onAliasEnter(e.target.value);
+    }
+  };
   return (
     <TextField
       id="alias"
@@ -36,18 +45,16 @@ export default function AliasField(){
           input:classes.textField
         },
       }}
+      FormHelperTextProps={{
+        className:classes.formHelperText
+      }}
       className={classes.textField}
+      label="Alias"
       helperText="Enter an alias to for easier identification."
       // How can I create the effect that this alias has been set?
       value={alias}
-      onChange={e => {
-        setAlias(e.target.value)}
-      }
-      onKeyDown={e => {
-        if (e.key === "Enter" && !!e.target.value) {
-          onAliasEnter(e.target.value);
-        }
-      }}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
     />
   );
 }

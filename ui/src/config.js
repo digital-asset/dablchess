@@ -35,7 +35,6 @@ export async function getWellKnownParties() {
       let wellKnownUrl = host.join('.') + portPartOfUrl + '/.well-known/dabl.json';
       const response = await fetch('//' + wellKnownUrl );
       const dablJson = await response.json();
-      console.log(`dablJson ${JSON.stringify(dablJson)}`);
       return dablJson
     } catch(error){
       alert(`Error determining well known parties ${error}`);
@@ -43,13 +42,14 @@ export async function getWellKnownParties() {
     }
   }
 }
-/*
+
 export async function fetchPublicToken() {
   if(isLocalDev){
     return ""
   } else {
     try {
-      const response = await fetch('//' + host.join(".") + portPartOfUrl + '/api/ledger/public/token', { method: 'POST' });
+      const publicTokenUrl = 'https://' + apiUrl.join(".") + portPartOfUrl + '/api/ledger/' + ledgerId+ '/public/token';
+      const response = await fetch(publicTokenUrl, { method: 'POST' });
       const jsonResp = await response.json();
       const accessToken = jsonResp['access_token'];
       return accessToken;
@@ -57,5 +57,5 @@ export async function fetchPublicToken() {
       alert(`Error fetching public token ${error}`);
       return "";
     }
-}
-*/
+  }
+};

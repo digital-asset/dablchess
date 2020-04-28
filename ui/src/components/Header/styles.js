@@ -129,33 +129,6 @@ export default makeStyles(theme => ({
       cursor: "pointer",
     },
   },
-  messageNotification: {
-    height: "auto",
-    display: "flex",
-    alignItems: "center",
-    "&:hover, &:focus": {
-      backgroundColor: theme.palette.background.light,
-    },
-  },
-  messageNotificationSide: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    marginRight: theme.spacing(2),
-  },
-  messageNotificationBodySide: {
-    alignItems: "flex-start",
-    marginRight: 0,
-  },
-  sendMessageButton: {
-    margin: theme.spacing(4),
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-    textTransform: "none",
-  },
-  sendButtonIcon: {
-    marginLeft: theme.spacing(2),
-  },
   progress: {
     // size: 28,
     color: "rgba(255, 255, 255, 0.35)",
@@ -163,6 +136,7 @@ export default makeStyles(theme => ({
   },
   newGameButton: {
     backgroundColor:"primary",
-    size:"small"
+    size:"small",
+    marginRight: theme.spacing(2)
   }
 }));

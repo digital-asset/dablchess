@@ -21,20 +21,14 @@ userCanCreateAlaises = scenario do
                 members = S.empty
                 ..
 
-  -- Can't be empty
-  submitMustFail alice do
-                    create AliasRequest with
-                      user = alice
-                      alias = ""
-                      operator
-
+  let alicesDesiredAlias = "Alice the Great"
   aliasRequest <- submit alice do
                     create AliasRequest with
                       user = alice
-                      alias = "Alice the Great"
+                      alias = alicesDesiredAlias
                       operator
 
-  aliases' <- submit operator do
+  aliases <- submit operator do
           exercise aliases ProcessRequest with requestId = aliasRequest
 
   submit alice do
@@ -45,14 +39,50 @@ userCanCreateAlaises = scenario do
   duplicateAliasRequest <- submit bob do
                             create AliasRequest with
                               user = bob
-                              alias = "Alice the Great"
+                              alias = alicesDesiredAlias
                               operator
 
-  aliases'' <- submit operator do
-          exercise aliases' ProcessRequest with requestId = duplicateAliasRequest
+  aliases <- submit operator do
+          exercise aliases ProcessRequest with
+            requestId = duplicateAliasRequest
 
   submit bob do
     (_, aliasMaps) <- fetchByKey @Aliases operator
     assertMsg "Bob can see the main map but doesn't have an alias." $ not $ M.member bob aliasMaps.partyToAlias
+
+  -- Alice can clear an alias with the empty string
+  emptyAliasRequest <- submit alice do
+      create AliasRequest with
+                user = alice
+                alias = ""
+                operator
+
+  aliases <- submit operator do
+          exercise aliases ProcessRequest with
+            requestId = emptyAliasRequest
+
+  submit bob do
+    (_, aliasMaps) <- fetchByKey @Aliases operator
+    assertMsg "Alice no longer has an alias" $ not $ M.member alice aliasMaps.partyToAlias
+
+  -- Should Alice lose the right to see the aliases if she doesn't have one?
+  -- Probably the correct state, as she can easily as for a new one.
+  submitMustFail alice do fetchByKey @Aliases operator
+
+  -- Bob can now impersonate
+  bobImmitatesAlice <- submit bob do
+                            create AliasRequest with
+                              user = bob
+                              alias = alicesDesiredAlias
+                              operator
+
+  aliases <- submit operator do
+          exercise aliases ProcessRequest with
+            requestId = bobImmitatesAlice
+
+  submit bob do
+    (_, aliasMaps) <- fetchByKey @Aliases operator
+    assertMsg "Bob has an alias" $ M.member bob aliasMaps.partyToAlias
+    assertMsg "Bob has Alice's desired alias" $ M.lookup bob aliasMaps.partyToAlias == Some alicesDesiredAlias
 
   return ()

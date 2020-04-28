@@ -6,6 +6,8 @@ import Header from "../Header/Header";
 import GamesTable from "../../pages/games-table/GamesTable";
 import DamlLedger from "@daml/react";
 import { useUserState } from "../../context/UserContext";
+import { AliasMapProvider } from "../../context/AliasMapContext";
+import { WellKnownPartiesProvider } from "../../context/WellKnownPartiesContext";
 import { wsBaseUrl, httpBaseUrl } from "../../config";
 
 function Layout() {
@@ -14,17 +16,21 @@ function Layout() {
 
   return (
     <DamlLedger party={user.party} token={user.token} httpBaseUrl={httpBaseUrl} wsBaseUrl={wsBaseUrl} >
-      <div className={classes.root}>
-          <>
-            <Header />
-            <div className={classnames(classes.content, { [classes.contentShift]: false })} >
-              <div className={classes.fakeToolbar} />
-              <Switch>
-                <Route path="/app/games-table" component={GamesTable} />
-              </Switch>
-            </div>
-          </>
-      </div>
+      <WellKnownPartiesProvider>
+        <AliasMapProvider>
+          <div className={classes.root}>
+              <>
+                <Header/>
+                <div className={classnames(classes.content, { [classes.contentShift]: false })} >
+                  <div className={classes.fakeToolbar} />
+                  <Switch>
+                    <Route path="/app/games-table" component={GamesTable} />
+                  </Switch>
+                </div>
+              </>
+          </div>
+        </AliasMapProvider>
+      </WellKnownPartiesProvider>
     </DamlLedger>
   );
 }

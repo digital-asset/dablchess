@@ -3,7 +3,8 @@ import { useLedger } from "@daml/react";
 import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell , TableBody } from "@material-ui/core";
 import { useStyles } from "./styles";
 import { ActiveSideOfGame, DrawRequest, GameProposal, PassiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
-import { useAliases, useUserState } from "../../context/UserContext";
+import { useUserState } from "../../context/UserContext";
+import { useAliasMaps } from "../../context/AliasMapContext";
 import ChessBoardDialog from "./components/ChessBoardDialog/ChessBoardDialog";
 
 function MyButton({text, onClick}){
@@ -25,7 +26,7 @@ function GameProposalRow({gameProposal}) {
   const userState = useUserState();
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias] = useAliases();
+  const aliasMap = useAliasMaps();
 
   async function acceptGameProposal(){
     console.log("Accepting game proposal:" + gameProposal.contractId);
@@ -37,12 +38,12 @@ function GameProposalRow({gameProposal}) {
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{gp.desiredSide}</TableCell>
-        <TableCell className={classes.tableCell}>{toAlias( userState.party === gp.opponent ? gp.proposer : gp.opponent)}</TableCell>
+        <TableCell className={classes.tableCell}>{aliasMap.toAlias( userState.party === gp.opponent ? gp.proposer : gp.opponent)}</TableCell>
         { userState.party === gp.opponent
         ? (<TableCell className={classes.tablecell}>
             <MyButton text="Accept" onClick={acceptGameProposal} />
           </TableCell>)
-        : (<TableCell className={classes.tablecell}>Waiting for {toAlias(gp.opponent)} to accept game request.</TableCell>)
+        : (<TableCell className={classes.tablecell}>Waiting for {aliasMap.toAlias(gp.opponent)} to accept game request.</TableCell>)
         }
       </TableRow>
   );
@@ -54,7 +55,7 @@ function ActiveSideOfGameRow({activeSideOfGame}) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias] = useAliases();
+  const aliasMap = useAliasMaps();
   const [openChessBoard, setOpenChessBoard] = React.useState(false);
 
   function handleClose() {
@@ -83,7 +84,7 @@ function ActiveSideOfGameRow({activeSideOfGame}) {
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{ap.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{ap.side}</TableCell>
-        <TableCell className={classes.tableCell}>{toAlias(ap.opponent)}</TableCell>
+        <TableCell className={classes.tableCell}>{aliasMap.toAlias(ap.opponent)}</TableCell>
         <TableCell className={classes.tablecell}>
           <ButtonGroup>
             <MyButton text="Move" onClick={move}/>
@@ -102,7 +103,7 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const [toAlias] = useAliases();
+  const aliasMap = useAliasMaps();
 
   async function askForADraw(){
     console.log("asking for a draw " + passiveSideOfGame.contractId);
@@ -132,9 +133,9 @@ function PassiveSideOfGameRow({passiveSideOfGame}) {
       <TableRow className={classes.tableRow} onClick={onClick}>
         <TableCell className={classes.tableCell}>{pp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{pp.side}</TableCell>
-        <TableCell className={classes.tableCell}>{toAlias(pp.opponent)}</TableCell>
+        <TableCell className={classes.tableCell}>{aliasMap.toAlias(pp.opponent)}</TableCell>
         <TableCell className={classes.tablecell}>
-          Waiting for {toAlias(pp.opponent)}'s move.
+          Waiting for {aliasMap.toAlias(pp.opponent)}'s move.
           <ButtonGroup>
             <MyButton text="Ask for a draw" onClick={askForADraw} />
             <MyButton text="Resign" onClick={resign} />
@@ -152,7 +153,7 @@ function DrawRequestRow({drawRequest}) {
   const classes = useStyles();
   const ledger = useLedger();
   const userState = useUserState();
-  const [toAlias] = useAliases();
+  const aliasMap = useAliasMaps();
 
   async function accept(){
     console.log("accepting draw " + drawRequest.contractId);
@@ -165,10 +166,10 @@ function DrawRequestRow({drawRequest}) {
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{dp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{dp.side}</TableCell>
-        <TableCell className={classes.tableCell}>{toAlias(dp.player)}</TableCell>
+        <TableCell className={classes.tableCell}>{aliasMap.toAlias(dp.player)}</TableCell>
         { userState.party === dp.opponent
         ? (<TableCell className={classes.tablecell}>
-            {toAlias(dp.player)} requested a draw:
+            {aliasMap.toAlias(dp.player)} requested a draw:
             <ButtonGroup>
               <MyButton text="Accept" onClick={accept} />
             </ButtonGroup>
@@ -185,7 +186,7 @@ function GameResultRow({gameResult}) {
 
   const classes = useStyles();
   const userState = useUserState();
-  const [toAlias] = useAliases();
+  const aliasMap = useAliasMaps();
   let gp = gameResult.payload;
   let gameState="No winner!";
   switch(gp.drawOrWinner.tag){
@@ -225,7 +226,7 @@ function GameResultRow({gameResult}) {
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
         <TableCell className={classes.tableCell}></TableCell>
-        <TableCell className={classes.tableCell}>{gp.opponent === userState.party ? toAlias(gp.proposer) : toAlias(gp.opponent)}</TableCell>
+        <TableCell className={classes.tableCell}>{gp.opponent === userState.party ? aliasMap.toAlias(gp.proposer) : aliasMap.toAlias(gp.opponent)}</TableCell>
         <TableCell className={classes.tablecell}>{gameState}</TableCell>
       </TableRow>
   );

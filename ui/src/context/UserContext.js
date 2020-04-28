@@ -1,8 +1,5 @@
-import React, {useState, useEffect} from "react";
-import { useStreamQuery } from "@daml/react";
-import { createToken, dablLoginUrl, getWellKnownParties } from "../config";
-import { Aliases } from "@daml-ts/chess-0.2.0/lib/Alias";
-
+import React from "react";
+import { createToken, dablLoginUrl } from "../config";
 
 var UserStateContext = React.createContext();
 var UserDispatchContext = React.createContext();
@@ -21,46 +18,6 @@ function userReducer(state, action) {
   }
 }
 
-function useWellKnownParties(){
-  const [wellKnownParties, setWKP] = useState({});
-  useEffect(() => {
-      async function res() {
-          const wkp = await getWellKnownParties();
-          console.log(`wkp : ${JSON.stringify(wkp)}`);
-          setWKP(wkp);
-      };
-      res();
-    },[]);
-
-  return wellKnownParties;
-}
-
-function useNaiveAliases() {
-  const [aliasToParty, setAliasToParty] = useState({});
-  const [partyToAlias, setPartyToAlias] = useState({});
-  const aliases = useStreamQuery(Aliases);
-  useEffect(() => {
-    if(!aliases.loading && aliases.contracts.length > 0){
-      setAliasToParty(aliases.contracts[0].payload.aliasToParty.textMap);
-      setPartyToAlias(aliases.contracts[0].payload.partyToAlias.textMap);
-      console.log(`Updated aliases ${JSON.stringify(aliasToParty)} ${JSON.stringify(partyToAlias)}`);
-    }
-  }, [aliases, aliasToParty, partyToAlias]);
-
-  return [aliasToParty, partyToAlias];
-}
-
-function useAliases() {
-  const [aliasToParty, partyToAlias] = useNaiveAliases();
-  function toParty(alias){
-    return alias in aliasToParty ? aliasToParty[alias] : alias;
-  }
-  function toAlias(party){
-    return party in partyToAlias ? partyToAlias[party] : party;
-  }
-  return [toAlias, toParty];
-}
-
 function UserProvider({ children }) {
   const party = localStorage.getItem("daml.party")
   const token = localStorage.getItem("daml.token")
@@ -70,7 +27,6 @@ function UserProvider({ children }) {
     token,
     party
   });
-
 
   return (
     <UserStateContext.Provider value={state}>
@@ -96,6 +52,7 @@ function useUserDispatch() {
   }
   return context;
 }
+
 
 // ###########################################################
 
@@ -131,4 +88,4 @@ function signOut(event, dispatch, history) {
   history.push("/login");
 }
 
-export { UserProvider, useUserState, useUserDispatch, loginUser, loginDablUser, signOut, useAliases, useNaiveAliases, useWellKnownParties};
+export { UserProvider, useUserState, useUserDispatch, loginUser, loginDablUser, signOut };

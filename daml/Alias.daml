@@ -5,6 +5,7 @@
 daml 1.2
 module Alias where
 
+import DA.Text qualified as T
 import DA.Next.Map qualified as M
 import DA.Next.Set qualified as S
 
@@ -31,28 +32,36 @@ template Aliases
                 case M.lookup request.user partyToAlias of
                   None -> (partyToAlias, aliasToParty)
                   Some oldAlias -> (M.delete request.user partyToAlias, M.delete oldAlias aliasToParty)
-              newMembers = S.insert request.user members
           _alias <- exercise requestId Acknowledge
-          case M.lookup request.alias woAliasToParty of
-            None ->
-              let partyToAlias = M.insert request.user request.alias woPartyToAlias
-                  aliasToParty = M.insert request.alias request.user woAliasToParty
-              in
-              do
-              create Aliases with members = newMembers, ..
-            Some v ->
-              do
-              create Aliases with members = newMembers, ..
+          if T.isEmpty request.alias
+          then
+            do
+              create Aliases with
+                        members = S.delete request.user members
+                        aliasToParty = woAliasToParty
+                        partyToAlias = woPartyToAlias
+                        ..
+          else
+            case M.lookup request.alias woAliasToParty of
+              None ->
+                do create Aliases with
+                    members = S.insert request.user members
+                    partyToAlias = M.insert request.user request.alias woPartyToAlias
+                    aliasToParty = M.insert request.alias request.user woAliasToParty
+                    ..
+              Some v ->
+                do create Aliases with
+                      members = S.insert request.user members
+                      ..
 
 -- An Alias and an AliasRequest are the same.
 template AliasRequest
   with
     user : Party
-    alias : Text
+    alias : Text      -- an empty alias request can be used to remove existing ones
     operator : Party
   where
     signatory user
-    ensure alias /= ""
 
     key (operator, user) : (Party, Party)
     maintainer key._2
