@@ -5,6 +5,8 @@ import { ContractId } from "@daml/types";
 import { useLedger } from "@daml/react";
 import { ActiveSideOfGame, Move, PassiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
 import { Coord, Piece, PieceType, Side, SplitGameState } from "@daml-ts/chess-0.2.0/lib/Types";
+import { useStyles } from "./styles";
+import classes from "*.module.css";
 
 type backgroundColorStyle = {
   backgroundColor : string
@@ -55,6 +57,8 @@ type ChessBoardDialogProp = {
 
 export default function ChessBoardDialog({open, onClose, game, c} : ChessBoardDialogProp) {
 
+  const classes = useStyles();
+
   /* The defaults in the library are
   darkSquareStyle: { backgroundColor: 'rgb(181, 136, 99)' }
   lightSquareStyle: { backgroundColor: 'rgb(240, 217, 181)' }
@@ -103,15 +107,17 @@ export default function ChessBoardDialog({open, onClose, game, c} : ChessBoardDi
 
   return (
     <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} maxWidth='md' fullWidth={true} >
-      <DialogTitle id="simple-dialog-title">Move</DialogTitle>
-      <Chessboard
-        //className={classes.chessboard}
-        position={position}
-        orientation={game.side.toLowerCase() as 'white' | 'black'}
-        onDrop={onDrop}
-        allowDrag={allowDrag}
-        squareStyles={squareStyles}
+      <DialogTitle id="simple-dialog-title">{game.inCheck_ ? "In check!" : "Make your move"}</DialogTitle>
+      <div className={game.inCheck_ ? classes.checkedBoardDiv : classes.regularBoardDiv}>
+        <Chessboard
+          boardStyle={{margin:"auto"}}
+          position={position}
+          orientation={game.side.toLowerCase() as 'white' | 'black'}
+          onDrop={onDrop}
+          allowDrag={allowDrag}
+          squareStyles={squareStyles}
         />
+      </div>
     </Dialog>
   );
 }
