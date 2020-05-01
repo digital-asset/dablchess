@@ -64,14 +64,15 @@ data MoveOrCapture
     = Move Coord
     | Capture Piece
     | EnPassant with eto : Coord, ecap : Piece
+    | Promotion with np : Piece , pcap : Optional Piece
     | Castle with kingTo : Coord, rook : Piece, rookTo : Coord
     deriving (Eq, Show)
-    -- TODO Add promotion
 
 isCapture : MoveOrCapture -> Bool
 isCapture (Move _)          = False
 isCapture (Capture _)       = True
 isCapture (EnPassant _ _)   = True
+isCapture (Promotion _ _)   = True
 isCapture (Castle _ _ _)    = False
 
 notOccupied : PieceMap -> [IntCoord] -> [MoveOrCapture]
@@ -108,6 +109,19 @@ follow side pm ic d =
 
 followDs : Side -> PieceMap -> IntCoord -> [Direction] -> [MoveOrCapture]
 followDs side pm ic ds = concatMap (follow side pm ic) ds
+
+-- Pawn special cases.
+promotionTypes : [PieceType]
+promotionTypes = [ Queen, Bishop, Knight, Rook]
+
+possiblePromotions : Side -> Coord -> [Piece]
+possiblePromotions owner coord = map (\tp -> Piece with moved = False, .. ) promotionTypes
+
+-- We'll convert regular moves/captures by pawns into Promotions in a second pass.
+labelAsPromotion : Side -> MoveOrCapture -> [MoveOrCapture]
+labelAsPromotion owner (Move coord)  = map (\np -> Promotion with np, pcap = None) $ possiblePromotions owner coord
+labelAsPromotion owner (Capture cap) = map (\np -> Promotion with np, pcap = Some cap) $ possiblePromotions owner cap.coord
+labelAsPromotion _     _             = error "Silly programmer a Pawn can't do that!"
 
 -- For FogOfWar style we want to have 2 notions of Pawn "moves"
 -- 1. What is a legal move? ex. moving forward into an unblocked position.  (True)
@@ -156,6 +170,9 @@ possiblePawnMoves pawnVisibility owner coord gs =
         (LegalMoves,    White, 4)   -> notOccupiedAt [(c, r+1)] ++
                                        capturePiecesAt [(c-1,r+1), (c+1,r+1)] ++
                                        checkEnPassant ()
+        (LegalMoves,    White, 6)   -> let regularMoves = notOccupiedAt [(c, r+1)] ++ capturePiecesAt [(c-1,r+1), (c+1,r+1)] in
+                                       concatMap (labelAsPromotion White) regularMoves
+
         (LegalMoves,    White, _)   -> notOccupiedAt [(c, r+1)] ++
                                        capturePiecesAt [(c-1,r+1), (c+1,r+1)]
         (VisibleSpaces, White, 1)   -> commonMoves () ++ coordsToMoves [ moveD (moveD ic Up) Up ]
@@ -169,6 +186,8 @@ possiblePawnMoves pawnVisibility owner coord gs =
         (LegalMoves,    Black, 3)   -> notOccupiedAt [(c, r - 1)] ++
                                        capturePiecesAt [(c-1,r-1), (c+1,r-1)] ++
                                        checkEnPassant ()
+        (LegalMoves,    Black, 1)   -> let regularMoves = notOccupiedAt [(c, r - 1)] ++ capturePiecesAt [(c-1,r-1), (c+1,r-1)] in
+                                       concatMap (labelAsPromotion Black) regularMoves
         (LegalMoves,    Black, _)   -> notOccupiedAt [(c, r - 1)] ++
                                        capturePiecesAt [(c-1,r-1), (c+1,r-1)]
         (VisibleSpaces, Black, 6)   -> commonMoves () ++ coordsToMoves [ moveD (moveD ic Down_) Down_ ]
@@ -246,10 +265,14 @@ foldMoves = foldMovesS LegalMoves
 findMove : GameState -> ChessMove -> Optional (Piece, MoveOrCapture)
 findMove gs move = foldMoves foundIt None gs
     where match by co ca = if move.from == by.coord && move.to == co then Some (by, ca) else None
+          foundIt : Optional (Piece, MoveOrCapture) -> Piece -> MoveOrCapture -> Optional (Piece, MoveOrCapture)
           foundIt s@(Some _) _by _mc                    = s
           foundIt None       by  ca@(Move ic)           = match by ic ca
           foundIt None       by  ca@(Capture c)         = match by c.coord ca
           foundIt None       by  ca@(EnPassant eto _)   = match by eto ca       -- The capture is implicit in the description.
+          foundIt None       by  ca@(Promotion np _)    = if move.from == by.coord && move.to == np.coord && move.promote == Some np.tp
+                                                          then Some (by, ca)
+                                                          else None
           foundIt None       by  ca@(Castle kingTo _ _) = match by kingTo ca
 
 -- Return a reason why this move is invalid.
@@ -297,6 +320,7 @@ mocToMove : Side -> Piece -> MoveOrCapture -> ChessMove
 mocToMove by piece (Move ic)           = ChessMove with from = piece.coord, to = ic, by, promote = None
 mocToMove by piece (Capture cp)        = ChessMove with from = piece.coord, to = cp.coord, by, promote = None
 mocToMove by piece (EnPassant eto _)   = ChessMove with from = piece.coord, to = eto, by, promote = None
+mocToMove by piece (Promotion np pcap) = ChessMove with from = piece.coord, to = np.coord, by, promote = Some np.tp
 mocToMove by piece (Castle kingTo _ _) = ChessMove with from = piece.coord, to = kingTo, by, promote = None
 
 movePiece : Piece -> Coord -> PieceMap -> PieceMap
@@ -308,6 +332,7 @@ playMove : Piece -> PieceMap -> MoveOrCapture -> PieceMap
 playMove p pieceMap (Move c)                = movePiece p c pieceMap
 playMove p pieceMap (Capture c)             = movePiece p c.coord pieceMap
 playMove p pieceMap (EnPassant eto ecap)    = movePiece p eto (M.delete ecap.coord pieceMap)
+playMove p pieceMap (Promotion np _pcap)    = M.insert np.coord np (M.delete p.coord pieceMap) -- capture is implicit.
 playMove p pieceMap (Castle kingTo rook rookTo)
                                             = movePiece p kingTo (movePiece rook rookTo pieceMap)
 
@@ -345,7 +370,9 @@ legal state mv = do
 -- Used to determine what coordinates are visible for FogOfWar style chess.
 visibleCoords : Side -> GameState -> SplitPieceMap
 visibleCoords side gs = foldMovesS VisibleSpaces justCoords M.empty (gs with side = side)
-    where justCoords m _ (Move coord)               = M.insert coord None m
+    where justCoords : SplitPieceMap -> Piece -> MoveOrCapture -> SplitPieceMap
+          justCoords m _ (Move coord)               = M.insert coord None m
           justCoords m _ (Capture p)                = M.insert p.coord (Some p) m
           justCoords m _ (EnPassant {eto, ecap})    = M.insert eto None $ M.insert ecap.coord (Some ecap) m
+          justCoords m _ (Promotion {np, pcap})     = M.insert np.coord pcap m
           justCoords m _ (Castle {kingTo, rookTo})  = M.insert kingTo None $ M.insert rookTo None m

@@ -1,12 +1,11 @@
-import React from "react";
+import React, {useState} from "react";
 import Chessboard, {Piece as CPiece, Position} from "chessboardjsx";
-import { Dialog, DialogTitle } from "@material-ui/core";
+import { Button, ButtonGroup, Dialog, DialogTitle } from "@material-ui/core";
 import { ContractId } from "@daml/types";
 import { useLedger } from "@daml/react";
 import { ActiveSideOfGame, Move, PassiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
 import { Coord, Piece, PieceType, Side, SplitGameState } from "@daml-ts/chess-0.2.0/lib/Types";
 import { useStyles } from "./styles";
-import classes from "*.module.css";
 
 type backgroundColorStyle = {
   backgroundColor : string
@@ -31,6 +30,25 @@ function toCoordAndDarkPiece(intCoord : string) : [string, boolean] {
     let coord = ['a','b','c','d','e','f','g','h'][col] + (row + 1);
     let darkPiece = (col % 2 === 0) ? asInt % 2 === 0 : asInt % 2 !== 0;
     return [coord, darkPiece];
+}
+
+type PromotePieceTypeDialogProp = {
+  open : boolean
+  setPromotion : any //(arg0:any) => void
+}
+
+function PromotePieceTypeDialog({open, setPromotion} : PromotePieceTypeDialogProp ) {
+  return (
+    <Dialog aria-labelledby="simple-dialog-title" open={open} maxWidth='md' fullWidth={true} >
+      <DialogTitle id="simple-dialog-title">Promote pawn to?</DialogTitle>
+      <ButtonGroup>
+        <Button onClick={()=>setPromotion(PieceType.Queen)}>Queen</Button>
+        <Button onClick={()=>setPromotion(PieceType.Bishop)}>Bishop</Button>
+        <Button onClick={()=>setPromotion(PieceType.Knight)}>Knight</Button>
+        <Button onClick={()=>setPromotion(PieceType.Rook)}>Rook</Button>
+      </ButtonGroup>
+    </Dialog>
+  )
 }
 
 interface ActiveContractId {
@@ -68,6 +86,13 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
   const visibleDarkStyle : backgroundColorStyle = { backgroundColor: 'rgb(135, 102, 74)'};
   const visibleLightStyle : backgroundColorStyle = { backgroundColor: 'rgb(210, 189, 158)'};
   const ledger = useLedger();
+  const [promote, setPromote] = useState<PieceType | null>(null);
+  const [openPromoteDialog, setOpenPromoteDialog] = useState(false);
+  function setPromotion(pt : PieceType) : void {
+    setPromote(pt);
+    setOpenPromoteDialog(false);
+  }
+
   let squareStyles : Record<string, backgroundColorStyle> = {};
   let position : Position = {};
   let board = game.pieces.textMap;
@@ -85,17 +110,25 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
     console.log(`After moving ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
+
   let onDrop : (m : moveArgs) => void;
   let allowDrag : () => boolean;
   let title : string;
   switch(c.kind) {
     case "active" :
       onDrop = ({sourceSquare, targetSquare, piece}) => {
+        console.log(`Dropping ${sourceSquare}, ${targetSquare}, ${piece}`);
         delete position[sourceSquare];
         position[targetSquare] = piece;
         const from = Coord.decoder().runWithException(sourceSquare.toUpperCase());
         const to = Coord.decoder().runWithException(targetSquare.toUpperCase());
-        const move : Move = { from, to, promote:null }; // TODO
+        const lastRow = parseInt(targetSquare[1], 10);
+        if( (piece == "wP" && lastRow === 8 && game.side === Side.White)
+          || (piece == "bP" && lastRow === 1 && game.side === Side.Black) ){
+            console.log('Consider promotion!')
+            setOpenPromoteDialog(true);
+        }
+        const move : Move = { from, to, promote};
         exerciseMove(c.contractId, move);
         onClose();
       }
@@ -108,11 +141,11 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
       title = game.inCheck_ ? "Check!" : "Waiting for your turn";
       break;
   }
-
   return (
     <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} maxWidth='md' fullWidth={true} >
       <DialogTitle id="simple-dialog-title">{title}</DialogTitle>
       <div className={game.inCheck_ ? classes.checkedBoardDiv : classes.regularBoardDiv}>
+        <PromotePieceTypeDialog open={openPromoteDialog} setPromotion={setPromotion}/>
         <Chessboard
           allowDrag={allowDrag}
           boardStyle={{margin:"auto"}}

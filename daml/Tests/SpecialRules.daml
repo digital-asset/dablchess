@@ -8,6 +8,7 @@ import DA.Next.Map as M
 --import DA.Either
 
 import Tests.Init
+import Chess
 import Types
 
 --import Rules.Data
@@ -37,7 +38,6 @@ testCastle = scenario do
     Left _ -> abort "Game should be in play"
     Right (_, pId) -> do
       p <- submit white do fetch pId
-      let () = traceRaw ("What ? " <> show p) ()
       assertMsg "King has moved" $ (M.lookup E1 p.passive.pieces == Some None)  -- we can see that there is no piece there.
       let whiteKing = Piece with coord = G1, tp = King, owner = White, moved = True
       assertMsg "King is in Castled position" $ M.lookup G1 p.passive.pieces == Some (Some whiteKing)
@@ -101,58 +101,39 @@ testEnPassant = scenario do
       assertMsg "Black pawn should be gone" (isSomeOfNone (M.lookup C7 ac.active.pieces))
     Left _ -> abort "Game should be in play"
 
-{- Still a WIP
 testPromote = scenario do
   InitData {..} <- initData
 
   let game = Right (activeSideOfGameId, passiveSideOfGameId)
-      invalidPromotion =
-        ChessMove with
-            from = B2
-            to = C3
-            by = White
-            promote = Some Queen
 
-  sameGame <- submitMove (return game) (white, invalidPromotion)
-  assertMsg "Invalid attempt to promite does not advance play" (game == sameGame)
+  sameGame <- submitMove (return game) (white, White, B2, C3)
+  assertMsg "Invalid attempt to promote does not advance play" (game == sameGame)
 
-  let
-    moves = [ (A2, A4)
-            , (A7, A5)
-            , (B2, B4)
-            , (A5, B4)
-            , (A4, A5)
-            , (A8, A6)
-            , (C2, C3)
-            , (A6, H6)
-            , (A5, A6)
-            , (H6, G6)
-            , (A6, A7)
-            , (G6, H6)
-            ]
-    moves' = orderedCoordsToMoves white black moves
+  let moves = [ (A2, A4)
+              , (A7, A5)
+              , (B2, B4)
+              , (A5, B4)
+              , (A4, A5)
+              , (A8, A6)
+              , (C2, C3)
+              , (A6, H6)
+              , (A5, A6)
+              , (H6, G6)
+              , (A6, A7)
+              , (G6, H6)
+              ]
+      moves' = orderedCoordsToMoves white black moves
   game <- foldl submitMove (return game) moves'
 
-  let validPromotion =
-        ChessMove with
-            from = A7
-            to = A8
-            by = White
-            promote = Some Queen
-
-  promote <- submitMove (return game) (white, validPromotion)
-
-  case promote of
-    Right (_,g) -> do
-      p <- submit white do fetch g
-      let
-        t = do
-          sm <- mapState p.passive
-          queen <- optionalToEither "Queen position not occupied" $ M.lookup (0,7) sm
-          assertMsg ("No Queen in expected position: " <> show queen)
-            (queen.tp == Queen && queen.moved)
-      case t of
-        Left e -> abort e
-        Right _ -> assert True
+  promotedGame <- case game of
     Left _ -> abort "Game should be in play"
-    -}
+    Right (a, _) -> do
+      activeActionId <- submit white do exercise a Move with from = A7, to = A8, promote = Some Queen
+      pareState $ submit operator do exercise operatorRole AdvancePlay with activeActionId
+
+  case promotedGame of
+    Left _ -> abort "Game should be in play"
+    Right (_,pId) -> do
+      p <- submit white do fetch pId
+      let secondWhiteQueen = Piece with coord = A8, tp = Queen, owner = White, moved = False
+      assertMsg "White now has a queen!" $ M.lookup A8 p.passive.pieces == Some (Some secondWhiteQueen)
