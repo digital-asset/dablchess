@@ -1,0 +1,35 @@
+-- Copyright (c) 2019 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.PawnVisibility where
+
+import DA.Next.Map as M
+--import DA.Either
+
+import Tests.Init
+import Types
+
+
+
+-- Pawn visibility
+pawnsCanSeeEachOther = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  game <- submitMove (return game) (white, White, E2, E4 )
+  game <- submitMove (return game) (black, Black, E7, E5)
+
+  case game of
+    Left _ -> abort "Game should be in play"
+    Right (a, p) -> do
+      activeC <- submit white do fetch a
+      let advancedBlackPawn = Piece with coord = E5, tp = Pawn, owner = Black, moved = True
+      assertMsg "White can see the advanced black pawn"
+        (M.lookup E5 activeC.active.pieces == Some (Some advancedBlackPawn))
+
+      passiveC <- submit black do fetch p
+      let advancedWhitePawn = Piece with coord = E4, tp = Pawn, owner = White, moved = True
+      assertMsg "Black can see the present white pawn"
+        (M.lookup E4 passiveC.passive.pieces == Some (Some advancedWhitePawn))
