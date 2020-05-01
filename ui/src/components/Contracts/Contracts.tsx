@@ -95,7 +95,7 @@ function ActiveSideOfGameRow({createAs} : ActiveSideofGameRowProp) {
 
   return (
     <>
-      <ChessBoardDialog open={openChessBoard} onClose={handleClose} game={ap.active} c={{kind:"active", contractId:createAs.contractId}} />
+      <ChessBoardDialog open={openChessBoard} side={ap.side} onClose={handleClose} game={ap.active} c={{kind:"active", contractId:createAs.contractId}} />
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{ap.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{ap.side}</TableCell>
@@ -148,7 +148,7 @@ function PassiveSideOfGameRow({createPs} : PassiveSideOfGameRowProp) {
 
   return (
     <>
-      <ChessBoardDialog open={openChessBoard} onClose={handleClose} game={pp.passive} c={{kind:"passive", contractId:createPs.contractId}} />
+      <ChessBoardDialog open={openChessBoard} side={pp.side} onClose={handleClose} game={pp.passive} c={{kind:"passive", contractId:createPs.contractId}} />
       <TableRow className={classes.tableRow} onClick={onClick}>
         <TableCell className={classes.tableCell}>{pp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{pp.side}</TableCell>

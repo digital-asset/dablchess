@@ -49,13 +49,14 @@ type OurContractId = ActiveContractId | PassiveContractId
 
 type ChessBoardDialogProp = {
   open : boolean
+  side : Side
   onClose : () => void
   game : SplitGameState
   c : OurContractId
   // Active can make moves while Passive (can't ..) is only for display.
 }
 
-export default function ChessBoardDialog({open, onClose, game, c} : ChessBoardDialogProp) {
+export default function ChessBoardDialog({open, side, onClose, game, c} : ChessBoardDialogProp) {
 
   const classes = useStyles();
 
@@ -86,6 +87,7 @@ export default function ChessBoardDialog({open, onClose, game, c} : ChessBoardDi
 
   let onDrop : (m : moveArgs) => void;
   let allowDrag : () => boolean;
+  let title : string;
   switch(c.kind) {
     case "active" :
       onDrop = ({sourceSquare, targetSquare, piece}) => {
@@ -98,21 +100,23 @@ export default function ChessBoardDialog({open, onClose, game, c} : ChessBoardDi
         onClose();
       }
       allowDrag = () => true;
+      title = game.inCheck_ ? "In check!" : "Make your move";
       break;
     case "passive" :
       onDrop = e => {};
       allowDrag = () => false;
+      title = game.inCheck_ ? "Check!" : "Waiting for your turn";
       break;
   }
 
   return (
     <Dialog onClose={onClose} aria-labelledby="simple-dialog-title" open={open} maxWidth='md' fullWidth={true} >
-      <DialogTitle id="simple-dialog-title">{game.inCheck_ ? "In check!" : "Make your move"}</DialogTitle>
+      <DialogTitle id="simple-dialog-title">{title}</DialogTitle>
       <div className={game.inCheck_ ? classes.checkedBoardDiv : classes.regularBoardDiv}>
         <Chessboard
           boardStyle={{margin:"auto"}}
           position={position}
-          orientation={game.side.toLowerCase() as 'white' | 'black'}
+          orientation={side.toLowerCase() as 'white' | 'black'}
           onDrop={onDrop}
           allowDrag={allowDrag}
           squareStyles={squareStyles}
