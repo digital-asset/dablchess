@@ -114,11 +114,11 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
       <DialogTitle id="simple-dialog-title">{title}</DialogTitle>
       <div className={game.inCheck_ ? classes.checkedBoardDiv : classes.regularBoardDiv}>
         <Chessboard
-          boardStyle={{margin:"auto"}}
-          position={position}
-          orientation={side.toLowerCase() as 'white' | 'black'}
-          onDrop={onDrop}
           allowDrag={allowDrag}
+          boardStyle={{margin:"auto"}}
+          onDrop={onDrop}
+          orientation={side.toLowerCase() as 'white' | 'black'}
+          position={position}
           squareStyles={squareStyles}
         />
       </div>
