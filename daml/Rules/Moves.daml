@@ -64,6 +64,7 @@ data MoveOrCapture
     = Move Coord
     | Capture Piece
     | EnPassant with eto : Coord, ecap : Piece
+    | Castle with kingTo : Coord, rook : Piece, rookTo : Coord
     deriving (Eq, Show)
     -- TODO Add promotion
 
@@ -71,6 +72,7 @@ isCapture : MoveOrCapture -> Bool
 isCapture (Move _)          = False
 isCapture (Capture _)       = True
 isCapture (EnPassant _ _)   = True
+isCapture (Castle _ _ _)    = False
 
 notOccupied : PieceMap -> [IntCoord] -> [MoveOrCapture]
 notOccupied pm = fmap Move . filter (not . occupied pm) . mapOptional onlyOnBoard
@@ -173,6 +175,46 @@ possiblePawnMoves pawnVisibility owner coord gs =
         (VisibleSpaces, Black, 3)   -> commonMoves () ++ checkEnPassant ()
         (VisibleSpaces, Black, _)   -> commonMoves ()
 
+unmovedRookAt : GameState -> Coord -> Optional Piece
+unmovedRookAt gs c =
+    case atPos gs.pieces c of
+        Some r | r.tp == Rook && not r.moved -> Some r
+        _ -> None
+
+-- coords : position between the King and Rook, ordered by King's movement.
+castleIfOkPositions : GameState -> [Coord] -> Coord -> Optional (MoveOrCapture)
+castleIfOkPositions gs coords rookCoord =
+    if any (occupied gs.pieces) coords
+        -- && any (kingCheckedAt gs) (take 2 coords)
+    then None
+    else unmovedRookAt gs rookCoord >>= \rook ->
+            Some $ Castle with
+                            kingTo = coords L.!! 1
+                            rook
+                            rookTo = L.head coords
+
+possibleKingMoves : Bool -> Side -> Coord -> GameState -> [MoveOrCapture]
+possibleKingMoves True side coord gs =
+    let ic = toIntCoord coord in
+    movesOrCaptures side gs.pieces $ filter onBoard $ fmap (moveD ic) [Up .. ]
+possibleKingMoves False White coord gs =
+    let regularMoves = possibleKingMoves True White coord gs in
+    if gs.inCheck || coord /= E1
+    then regularMoves
+    else let leftCastle = castleIfOkPositions gs [D1, C1, B1] A1
+             rightCastle = castleIfOkPositions gs [F1, G1] H1
+         in
+         catOptionals [leftCastle, rightCastle] ++ regularMoves
+possibleKingMoves False Black coord gs =
+    let regularMoves = possibleKingMoves True Black coord gs in
+    if gs.inCheck || coord /= E8
+    then regularMoves
+    else let leftCastle = castleIfOkPositions gs [D8, C8, B8] A8
+             rightCastle = castleIfOkPositions gs [F8, G8] H8
+         in
+         catOptionals [leftCastle, rightCastle] ++ regularMoves
+
+
 possibleMoves : PawnVisibility -> Piece -> GameState -> [MoveOrCapture]
 possibleMoves pawnVisibility piece gs =
     let ps = piece.owner
@@ -185,9 +227,8 @@ possibleMoves pawnVisibility piece gs =
         Bishop -> followDs ps pm ic [RightUp, RightDown, LeftDown, LeftUp]
         Rook -> followDs ps pm ic [Up, Right_, Down_, Left_]
         Queen -> followDs ps pm ic [Up .. ]
-        -- TODO: add castling
         -- TODO: Prevent moving into check here?
-        King -> movesOrCaptures ps pm $ filter onBoard $ fmap (moveD ic) [Up .. ]
+        King -> possibleKingMoves piece.moved piece.owner piece.coord gs
 
 -- The type of the f in foldMoves
 -- the piece is repeated for all possible MoveOrCapture's
@@ -209,6 +250,7 @@ findMove gs move = foldMoves foundIt None gs
           foundIt None       by  ca@(Move ic)           = match by ic ca
           foundIt None       by  ca@(Capture c)         = match by c.coord ca
           foundIt None       by  ca@(EnPassant eto _)   = match by eto ca       -- The capture is implicit in the description.
+          foundIt None       by  ca@(Castle kingTo _ _) = match by kingTo ca
 
 -- Return a reason why this move is invalid.
 validMove : GameState -> ChessMove -> Either Text (Piece, MoveOrCapture)
@@ -235,35 +277,47 @@ findKing gs =
 checkedBy : GameState -> Optional Piece
 checkedBy gs = foldMoves kingAttacked None (gs with side = opposite gs.side)
     where king = findKing gs
-          kingAttacked p@(Some _) _by    _mc            = p
-          kingAttacked None       by    (Move _)        = None
+          kingAttacked (Some by) _by    _mc             = (Some by)
           kingAttacked None       by    (Capture p)     = if p == king then Some by else None
-          kingAttacked None       by    (EnPassant _ _) = None
+          kingAttacked None       by    _               = None
 
 -- Have to keep this here (and not in States) to prevent King from moving into check.
 checked : GameState -> Bool
 checked gs = isSome $ checkedBy gs
 
+-- For castling we need to consider alternate king positions.
+kingCheckedAt : GameState -> Coord -> Bool
+kingCheckedAt gs coord = checked afterKingMoved
+    where king = findKing gs
+          afterKingMoved = gs with pieces = movePiece king coord gs.pieces
+
+
+-- This is what is recorded on the moves history.
 mocToMove : Side -> Piece -> MoveOrCapture -> ChessMove
 mocToMove by piece (Move ic)           = ChessMove with from = piece.coord, to = ic, by, promote = None
 mocToMove by piece (Capture cp)        = ChessMove with from = piece.coord, to = cp.coord, by, promote = None
 mocToMove by piece (EnPassant eto _)   = ChessMove with from = piece.coord, to = eto, by, promote = None
+mocToMove by piece (Castle kingTo _ _) = ChessMove with from = piece.coord, to = kingTo, by, promote = None
+
+movePiece : Piece -> Coord -> PieceMap -> PieceMap
+movePiece p newCoord pm = M.insert newPiece.coord newPiece boardWithoutPiece
+    where boardWithoutPiece = M.delete p.coord pm
+          newPiece = p with coord = newCoord, moved = True
+
+playMove : Piece -> PieceMap -> MoveOrCapture -> PieceMap
+playMove p pieceMap (Move c)                = movePiece p c pieceMap
+playMove p pieceMap (Capture c)             = movePiece p c.coord pieceMap
+playMove p pieceMap (EnPassant eto ecap)    = movePiece p eto (M.delete ecap.coord pieceMap)
+playMove p pieceMap (Castle kingTo rook rookTo)
+                                            = movePiece p kingTo (movePiece rook rookTo pieceMap)
 
 -- Apply move to game state.
 -- Does not update side, inCheck or everCheck
 move_ : GameState -> Piece -> MoveOrCapture -> GameState
 move_ gs piece mc =
-  let mv = mocToMove gs.side piece mc
-      raisedPieces = M.delete mv.from gs.pieces
-      raisedPieces' = case mc of
-                        EnPassant _ ecap -> M.delete ecap.coord raisedPieces
-                        _ -> raisedPieces
-      movedPiece = piece with coord = mv.to, moved = True
-      placedPieces = M.insert movedPiece.coord movedPiece raisedPieces'
-  in
-  gs with
-      pieces = placedPieces
-      moves = mv :: gs.moves
+    gs with
+      pieces = playMove piece gs.pieces mc
+      moves = (mocToMove gs.side piece mc) :: gs.moves
 
 updateTurn : GameState -> GameState
 updateTurn gs =
@@ -291,6 +345,7 @@ legal state mv = do
 -- Used to determine what coordinates are visible for FogOfWar style chess.
 visibleCoords : Side -> GameState -> SplitPieceMap
 visibleCoords side gs = foldMovesS VisibleSpaces justCoords M.empty (gs with side = side)
-    where justCoords m _ (Move coord)            = M.insert coord None m
-          justCoords m _ (Capture p)             = M.insert p.coord (Some p) m
-          justCoords m _ (EnPassant {eto, ecap}) = M.insert eto None $ M.insert ecap.coord (Some ecap) m
+    where justCoords m _ (Move coord)               = M.insert coord None m
+          justCoords m _ (Capture p)                = M.insert p.coord (Some p) m
+          justCoords m _ (EnPassant {eto, ecap})    = M.insert eto None $ M.insert ecap.coord (Some ecap) m
+          justCoords m _ (Castle {kingTo, rookTo})  = M.insert kingTo None $ M.insert rookTo None m
