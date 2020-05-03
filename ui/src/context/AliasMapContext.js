@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import { useStreamQuery } from "@daml/react";
 import Ledger from "@daml/ledger";
-import { Aliases } from "@daml-ts/chess-0.2.0/lib/Alias";
+import { Aliases } from "@daml-ts/chess-0.3.0/lib/Alias";
 import { fetchPublicToken, httpBaseUrl, isLocalDev, wsBaseUrl } from "../config";
 
 var AliasMapContext = React.createContext();

@@ -1,7 +1,7 @@
 import React from "react";
 import Contracts from "../../components/Contracts/Contracts";
 import { useStreamQuery } from "@daml/react";
-import { ActiveSideOfGame, DrawRequest, GameProposal, GameResult, PassiveSideOfGame } from "@daml-ts/chess-0.2.0/lib/Chess";
+import { ActiveSideOfGame, DrawRequest, GameProposal, GameResult, PassiveSideOfGame } from "@daml-ts/chess-0.3.0/lib/Chess";
 
 export default function GamesTable() {
 

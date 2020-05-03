@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "private": true,
   "dependencies": {
-    "@daml-ts/chess-0.2.0": "file:../daml-ts/chess-0.2.0",
+    "@daml-ts/chess-0.3.0": "file:../daml-ts/chess-0.3.0",
     "@daml/ledger": "1.0.0",
     "@daml/react": "1.0.0",
     "@daml/types": "1.0.0",

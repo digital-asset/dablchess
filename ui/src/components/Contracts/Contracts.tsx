@@ -3,7 +3,7 @@ import { CreateEvent } from "@daml/ledger";
 import { useLedger } from "@daml/react";
 import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell , TableBody } from "@material-ui/core";
 import { useStyles } from "./styles";
-import { ActiveSideOfGame, DrawRequest, GameProposal, PassiveSideOfGame, GameResult } from "@daml-ts/chess-0.2.0/lib/Chess";
+import { ActiveSideOfGame, DrawRequest, GameProposal, PassiveSideOfGame, GameResult } from "@daml-ts/chess-0.3.0/lib/Chess";
 import { useUserState } from "../../context/UserContext";
 import { useAliasMaps } from "../../context/AliasMapContext";
 import ChessBoardDialog from "./components/ChessBoardDialog/ChessBoardDialog";
