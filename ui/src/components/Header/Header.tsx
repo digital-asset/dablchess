@@ -1,5 +1,5 @@
 import React from "react";
-import { withRouter } from "react-router-dom";
+import { RouteComponentProps, withRouter } from "react-router-dom";
 import { AppBar, Button, IconButton, Toolbar, Typography } from "@material-ui/core";
 import { ExitToApp, Refresh } from "@material-ui/icons";
 import useStyles from "./styles";
@@ -8,7 +8,12 @@ import AliasField from "./components/AliasField/AliasField";
 import NewGameDialog from "./components/NewGameDialog/NewGameDialog";
 import { useReload } from "@daml/react";
 
-function NewGameButton({text, onClick}){
+type NewGameButtonProp = {
+  text : string
+  onClick : () => void
+}
+
+function NewGameButton({text, onClick} : NewGameButtonProp){
   const classes = useStyles();
   return (
     <Button
@@ -20,27 +25,31 @@ function NewGameButton({text, onClick}){
   );
 }
 
-function Header({ history }) {
+function Header({ history }: RouteComponentProps<any>) {
   const classes = useStyles();
 
   // global
   const userState = useUserState();
   const userDispatch = useUserDispatch();
   const reload = useReload();
-  const [newGameDialogOpen, setOpenNewGameDialog] = React.useState(false);
+  const [newGameDialogOpen, setOpenNewGameDialog] = React.useState<boolean>(false);
+  if(!userState.isAuthenticated){
+    return null;
+  }
 
   return (
     <AppBar position="fixed" className={classes.appBar}>
       <Toolbar className={classes.toolbar}>
-        <Typography variant="h6" weight="medium" className={classes.logotype}>
+        <Typography variant="h6" className={classes.logotype}>
           DABL Chess
         </Typography>
         <NewGameButton text="New Game" onClick={()=>setOpenNewGameDialog(true)} />
         <NewGameDialog open={newGameDialogOpen} handleClose={()=>setOpenNewGameDialog(false)}/>
         <div className={classes.grow} />
         <AliasField />
-                                       {/* Do not set this vvvvv one to an Alias */}
-        <Typography variant="h6" weight="medium">User: {userState.party}</Typography>
+        <Typography variant="h6" >
+          User: {userState.party}       {/* Do not set this one to an Alias */}
+        </Typography>
         <IconButton
           color="inherit"
           aria-haspopup="true"

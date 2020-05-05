@@ -1,6 +1,6 @@
-import { makeStyles } from "@material-ui/styles";
+import { createStyles, makeStyles } from "@material-ui/styles";
 
-export default makeStyles(theme => ({
+export default makeStyles((theme:any) => createStyles({
   root: {
     display: "flex",
     maxWidth: "100vw",

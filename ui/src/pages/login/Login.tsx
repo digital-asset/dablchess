@@ -1,22 +1,24 @@
 import React, { useState } from "react";
 import { Grid, CircularProgress, Typography, Button, TextField, Fade } from "@material-ui/core";
-import { withRouter } from "react-router-dom";
+import { } from "react-router-dom";
+import { RouteComponentProps, withRouter} from 'react-router-dom';
 import useStyles from "./styles";
 import logo from "./logo.svg";
 import { useUserDispatch, loginUser, loginDablUser } from "../../context/UserContext";
 import { isLocalDev } from "../../config";
 
-function Login(props) {
+
+function Login({history}:RouteComponentProps<any>) {
   var classes = useStyles();
 
   // global
   var userDispatch = useUserDispatch();
 
   // local
-  var [isLoading, setIsLoading] = useState(false);
-  var [error, setError] = useState(null);
-  var [loginValue, setLoginValue] = useState("");
-  var [passwordValue, setPasswordValue] = useState("");
+  var [isLoading, setIsLoading] = useState<boolean>(false);
+  var [error, setError] = useState(false);
+  var [loginValue, setLoginValue] = useState<string>("");
+  var [passwordValue, setPasswordValue] = useState<string>("");
 
   return (
     <Grid container className={classes.container}>
@@ -57,7 +59,7 @@ function Login(props) {
                       userDispatch,
                       loginValue,
                       passwordValue,
-                      props.history,
+                      history,
                       setIsLoading,
                       setError,
                     )
@@ -84,7 +86,7 @@ function Login(props) {
                       userDispatch,
                       loginValue,
                       passwordValue,
-                      props.history,
+                      history,
                       setIsLoading,
                       setError,
                     )
@@ -105,7 +107,7 @@ function Login(props) {
                         userDispatch,
                         loginValue,
                         passwordValue,
-                        props.history,
+                        history,
                         setIsLoading,
                         setError,
                       )

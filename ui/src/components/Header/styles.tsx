@@ -1,7 +1,7 @@
-import { makeStyles } from "@material-ui/styles";
+import { makeStyles, createStyles } from "@material-ui/styles";
 import { fade } from "@material-ui/core/styles/colorManipulator";
 
-export default makeStyles(theme => ({
+export default makeStyles((theme:any) => createStyles({
   logotype: {
     color: "white",
     marginLeft: theme.spacing(2.5),

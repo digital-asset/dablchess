@@ -1,11 +1,12 @@
-import React, { useEffect } from "react";
-import { HashRouter, Route, Switch, Redirect } from "react-router-dom";
+import React, { useEffect }from "react";
+import { HashRouter, Redirect, Route, Switch, } from "react-router-dom";
 import Layout from "./Layout/Layout";
 import Error from "../pages/error/Error";
 import Login from "../pages/login/Login";
 import { useUserState, useUserDispatch } from "../context/UserContext";
 
 export default function App() {
+  const gamesTablePath = "/app/games-table";
   const userState = useUserState();
 
   return (
@@ -15,7 +16,7 @@ export default function App() {
         <Route
           exact
           path="/app"
-          render={() => <Redirect to="/app/games-table" />}
+          render={() => <Redirect to={gamesTablePath} />}
         />
         <PrivateRoute path="/app" component={Layout} />
         <PublicRoute path="/login" component={Login} />
@@ -26,7 +27,7 @@ export default function App() {
 
   // #######################################################################
 
-  function RootRoute(props) {
+  function RootRoute() {
     var userDispatch = useUserDispatch();
 
     useEffect(() => {
@@ -37,7 +38,8 @@ export default function App() {
       }
       const party = url.searchParams.get('party');
       if (party === null) {
-        throw Error("When 'token' is passed via URL, 'party' must be passed too.");
+        console.log("When 'token' is passed via URL, 'party' must be passed too.");
+        throw Error();
       }
       localStorage.setItem("daml.party", party);
       localStorage.setItem("daml.token", token);
@@ -46,17 +48,16 @@ export default function App() {
     })
 
     return (
-      <Redirect to="/app/games-table" />
+      <Redirect to={gamesTablePath} />
     )
   }
-
-  function PrivateRoute({ component, ...rest }) {
+  function PrivateRoute({ ...rest } ) {
     return (
       <Route
         {...rest}
         render={props =>
           userState.isAuthenticated ? (
-            React.createElement(component, props)
+            <Layout {... props}/>
           ) : (
             <Redirect
               to={{
@@ -72,7 +73,7 @@ export default function App() {
     );
   }
 
-  function PublicRoute({ component, ...rest }) {
+  function PublicRoute({ ...rest }) {
     return (
       <Route
         {...rest}
@@ -84,7 +85,7 @@ export default function App() {
               }}
             />
           ) : (
-            React.createElement(component, props)
+            <Login {...props}/>
           )
         }
       />

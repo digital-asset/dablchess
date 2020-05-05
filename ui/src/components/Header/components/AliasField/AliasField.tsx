@@ -10,20 +10,27 @@ import { AliasRequest } from "@daml-ts/chess-0.3.0/lib/Alias";
 export default function AliasField(){
 
   const classes = useStyles();
-  const userState = useUserState();
   const wellKnownParties = useWellKnownParties();
   const ledger = useLedger();
-  const [alias, setAlias] = useState("");
+  const [alias, setAlias] = useState<string>("");
   const aliasMap = useAliasMaps();
+  const userState = useUserState();
   useEffect(() => {
-    setAlias(aliasMap.toAlias(userState.party))
+    if(userState.isAuthenticated){
+      setAlias(aliasMap.toAlias(userState.party))
+    }
   }, [userState, aliasMap])
 
-  function handleChange(e){
-    setAlias(e.target.value)
+  if(!userState.isAuthenticated){
+    return null;
+  }
+  const user = userState.party;   // Assigning it here avoids a cast later
+
+  function handleChange(event : React.ChangeEvent<HTMLInputElement>){
+    setAlias(event.target.value)
   };
-  async function onAliasEnter(newAliasValue){
-    let args = { user : userState.party
+  async function onAliasEnter(newAliasValue : string){
+    let args = { user
                , alias : newAliasValue
                , operator : wellKnownParties.userAdminParty
                };
@@ -31,9 +38,9 @@ export default function AliasField(){
     console.log(`Sent an aliasRequest ${JSON.stringify(args)} -> ${JSON.stringify(aliasRequest)}`);
     //Do not setAlias(newAliasValue) wait until we get a confirm.
   };
-  function handleKeyDown(e){
-    if (e.key === "Enter") {
-      onAliasEnter(e.target.value);
+  function handleKeyDown(event : React.KeyboardEvent<HTMLInputElement>){
+    if (event.key === "Enter") {
+      onAliasEnter((event.target as HTMLInputElement).value);
     }
   };
   return (
@@ -41,7 +48,6 @@ export default function AliasField(){
       id="alias"
       InputProps={{
         classes: {
-          underline: classes.textFieldUnderline,
           input:classes.textField
         },
       }}

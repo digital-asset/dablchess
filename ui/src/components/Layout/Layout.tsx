@@ -13,6 +13,9 @@ import { wsBaseUrl, httpBaseUrl } from "../../config";
 function Layout() {
   const classes = useStyles();
   const user = useUserState();
+  if(!user.isAuthenticated){
+    return null;
+  }
 
   return (
     <DamlLedger party={user.party} token={user.token} httpBaseUrl={httpBaseUrl} wsBaseUrl={wsBaseUrl} >

@@ -16,7 +16,7 @@ export default function Error() {
     <Grid container className={classes.container}>
       <div className={classes.logotype}>
         <img className={classes.logotypeIcon} src={logo} alt="logo" />
-        <Typography variant="h3" color="white" className={classes.logotypeText}>
+        <Typography variant="h3" className={classes.logotypeText}>
           DABL Chess
         </Typography>
       </div>
@@ -33,8 +33,6 @@ export default function Error() {
         </Typography>
         <Typography
           variant="h6"
-          color="text"
-          colorBrightness="secondary"
           className={classnames(classes.textRow, classes.safetyText)}
         >
           But we&apos;re here to bring you back to safety

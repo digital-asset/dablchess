@@ -1,6 +1,6 @@
-import { makeStyles } from "@material-ui/styles";
+import { makeStyles, createStyles } from "@material-ui/styles";
 
-export default makeStyles(theme => ({
+export default makeStyles((theme:any) => createStyles({
   container: {
     height: "100vh",
     width: "100vw",

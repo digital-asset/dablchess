@@ -34,11 +34,13 @@ function GameProposalRow({createGp} : GameProposalRowProp) {
   console.log(`Converting a gameProposal ${createGp.contractId}.`);
   let gp = createGp.payload;
 
-  const userState = useUserState();
   const classes = useStyles();
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
-
+  const userState = useUserState();
+  if(!userState.isAuthenticated){
+    return null;
+  }
   async function acceptGameProposal(){
     console.log("Accepting game proposal:" + createGp.contractId);
     const [choiceReturnValue, events] = await ledger.exercise(GameProposal.Accept, createGp.contractId, {});
@@ -175,8 +177,11 @@ function DrawRequestRow({createDr} : DrawRequestRowProp) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const userState = useUserState();
   const aliasMap = useAliasMaps();
+  const userState = useUserState();
+  if(!userState.isAuthenticated){
+    return null;
+  }
 
   async function accept(){
     console.log("accepting draw " + createDr.contractId);
@@ -217,8 +222,13 @@ function GameResultRow({createGr} : GameResultRowProp) {
   const classes = useStyles();
   const userState = useUserState();
   const aliasMap = useAliasMaps();
+  if(!userState.isAuthenticated){
+    return null;
+  }
+
   let gp = createGr.payload;
   let gameState="No winner!";
+
   switch(gp.drawOrWinner.tag){
     case "Winner":
       gameState = gp.drawOrWinner.value + " won!";
@@ -245,6 +255,7 @@ function GameResultRow({createGr} : GameResultRowProp) {
       };
       break;
   };
+
   return (
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
