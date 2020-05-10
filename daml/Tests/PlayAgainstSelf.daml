@@ -8,7 +8,6 @@ import DA.Assert
 
 import Chess
 import Types
-import Tests.Init
 
 -- You should be able to play against yourself.
 
@@ -16,6 +15,8 @@ self = do
   let gameId = "Epic Battle"
   alice <- getParty "Alice"
   operator <- getParty "Ref"
+
+  operatorRole <- submit operator do create OperatorRole with ..
 
   gameProposalId <- submit alice do
     create GameProposal with
@@ -28,24 +29,22 @@ self = do
   gameAcceptId <- submit alice do exercise gameProposalId Accept
   gId <- submit operator do exercise gameAcceptId Start
 
-  (activeSideOfGameId, passiveSideOfGameId, operatorRole) <- submit operator do
+  (activeSideOfGameId, passiveSideOfGameId) <- submit operator do
     exercise gId Begin
 
   active <- submit alice do fetch activeSideOfGameId
   active.player === alice
-  active.opponent === alice
 
   passive <- submit alice do fetch passiveSideOfGameId
   passive.player === alice
-  passive.opponent === alice
 
-  activeActionId <- submit alice do
+  activeMoveId <- submit alice do
     exercise activeSideOfGameId Move with
                                   from = D2
                                   to = D4
                                   promote = None
 
-  game <- pareState $ submit operator do exercise operatorRole AdvancePlay with activeActionId
+  game <- submit operator do exercise operatorRole AdvancePlay with activeMoveId
 
   (a,p) <- case game of
               Left _result -> abort "The game is not over!"

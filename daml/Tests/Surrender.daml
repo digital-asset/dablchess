@@ -9,28 +9,34 @@ import Types
 import Tests.Init
 
 -- Test of the surrender flow
-
 activeSurrender = scenario do
   InitData {..} <- initData
 
-  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+  surrenderId <- submit white do exercise activeSideOfGameId ActiveSurrender
+  submitMustFail white do fetch activeSideOfGameId
+  submitMustFail black do exercise passiveSideOfGameId PassiveSurrender -- there can be only one.
+  submitMustFail black do exercise passiveSideOfGameId PassiveDrawProposal
 
-  surrenderId <- submit white do exercise activeSideOfGameId Forfeit
-  gameResultId <- submit operator do exercise operatorRole AcknowledgeSurrender
+  submitMustFail operator do exercise surrenderId ToRequest -- Can't interpret this as a Draw
+  gameResultId <- submit operator do exercise surrenderId DeclareWinner
+
   submitMustFail black do fetch passiveSideOfGameId   -- No more
   gameResult <- submit black do fetch gameResultId    -- Game result instead!
 
-  assertMsg "Black wins after white forfeitts" (gameResult.drawOrWinner == Winner black)
+  assertMsg "Black wins after white forfeits" (gameResult.drawOrWinner == Winner black)
 
-
-passiveForfeit = scenario do
+passiveSurrender = scenario do
   InitData {..} <- initData
 
-  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+  surrenderId <- submit black do exercise passiveSideOfGameId PassiveSurrender
+  submitMustFail black do fetch passiveSideOfGameId
+  submitMustFail white do exercise activeSideOfGameId ActiveSurrender -- there can be only one.
+  submitMustFail white do exercise activeSideOfGameId ActiveDrawProposal
 
-  surrenderId <- submit black do exercise passiveSideOfGameId Resign
-  gameResultId <- submit operator do exercise operatorRole AcknowledgeSurrender
-  submitMustFail white do fetch activeSideOfGameId
-  gameResult <- submit white do fetch gameResultId
+  submitMustFail operator do exercise surrenderId ToRequest -- Can't interpret this as a Draw
+  gameResultId <- submit operator do exercise surrenderId DeclareWinner
 
-  assertMsg "White wins after black resigns" (gameResult.drawOrWinner == Winner white)
+  submitMustFail white do fetch activeSideOfGameId   -- No more
+  gameResult <- submit white do fetch gameResultId    -- Game result instead!
+
+  assertMsg "White wins after black forfeits" (gameResult.drawOrWinner == Winner white)
