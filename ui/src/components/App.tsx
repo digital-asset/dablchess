@@ -18,8 +18,8 @@ export default function App() {
           path="/app"
           render={() => <Redirect to={gamesTablePath} />}
         />
-        <PrivateRoute path="/app" component={Layout} />
-        <PublicRoute path="/login" component={Login} />
+        <PrivateRoute path="/app" />
+        <PublicRoute path="/login" />
         <Route component={Error} />
       </Switch>
     </HashRouter>
