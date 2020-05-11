@@ -32,3 +32,15 @@ export const dablLoginUrl : string = loginUrl.join('.') + portPartOfUrl + '/auth
 export const wellKnownUrl : string = host.join('.') + portPartOfUrl + '/.well-known/dabl.json';
 
 export const publicTokenUrl = 'https://' + apiUrl.join(".") + portPartOfUrl + '/api/ledger/' + ledgerId+ '/public/token';
+
+console.log(`Config:
+  isLocalDev ${isLocalDev}
+  ledgerId ${ledgerId}
+  portPartOfUril ${portPartOfUrl}
+  httpBaseUrl ${httpBaseUrl}
+  wsBaseUrl ${wsBaseUrl}
+  loginUrl ${loginUrl}
+  dablLoginUrl ${dablLoginUrl}
+  wellKnownUrl ${wellKnownUrl}
+  publicTokenUrl ${publicTokenUrl}
+`);
