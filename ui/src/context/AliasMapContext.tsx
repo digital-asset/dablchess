@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import { useStreamQuery } from "@daml/react";
 import Ledger, { CreateEvent } from "@daml/ledger";
-import { Aliases } from "@daml-ts/chess-0.3.0/lib/Alias";
+import { Aliases } from "@daml-ts/chess-0.4.0/lib/Alias";
 import { httpBaseUrl, isLocalDev, publicTokenUrl, wsBaseUrl } from "../config";
 
 async function fetchPublicToken() : Promise<string> {
