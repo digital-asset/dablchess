@@ -26,8 +26,10 @@ testFoolsMate = scenario do
       game = (activeSideOfGameId, passiveSideOfGameId)
   game <- foldl submitMove (return $ Right game) moves'
 
-  win <- case game of
+  (winId, win) <- case game of
     Right _ -> abort "Should be a win"
-    Left win -> submit operator do fetch win
+    Left winId -> do
+      gameResult <- submit operator do fetch winId
+      return (winId, gameResult)
 
   Winner black === win.drawOrWinner

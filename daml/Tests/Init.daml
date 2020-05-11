@@ -19,15 +19,6 @@ data InitData = InitData with
 
 type ResultOrNextMove = Either (ContractId GameResult) GameContractIds
 
-pareState : Scenario AdvanceResult -> Scenario ResultOrNextMove
-pareState sad =
-  do
-    ad <- sad
-    case ad of
-      StateHasMoved   -> abort "Your tests have more than one move, not supported in submitMove"
-      (GameEnd ge)    -> do return $ Left ge
-      (NextState gc)  -> do return $ Right gc
-
 -- Helper to advance play with a move that handles both the player and operators actions
 -- These are used only in the testing scenario's.
 createSubmitMove : Party -> ContractId OperatorRole -> Scenario ResultOrNextMove -> (Party, Side, Coord, Coord) -> Scenario ResultOrNextMove
@@ -37,14 +28,15 @@ createSubmitMove operator operatorRole seg (player, by, from, to) =
     case eg of
       Left _ -> abort "Can't continue won game"
       Right (activeId, _passive) -> do
-        activeId <- submit player do exercise activeId Move with promote = None, ..
-        pareState $ submit operator do exercise operatorRole AdvancePlay with activeActionId = activeId
+        activeMoveId <- submit player do exercise activeId Move with promote = None, ..
+        submit operator do exercise operatorRole AdvancePlay with ..
 
 initData = do
   let gameId = "Alice (White) vs Bob (Black) "
   alice <- getParty "Alice"
   bob <- getParty "Bob"
   operator <- getParty "Ref"
+  operatorRole <- submit operator do create OperatorRole with ..
 
   gameProposalId <- submit alice do
     create GameProposal with
@@ -58,7 +50,7 @@ initData = do
   gId <- submit operator do exercise gameAcceptId Start
 
   (activeSideOfGameId, passiveSideOfGameId, active, passive, operatorRole) <- submit operator do
-    (activeSideOfGameId, passiveSideOfGameId, operatorRole) <- exercise gId Begin
+    (activeSideOfGameId, passiveSideOfGameId) <- exercise gId Begin
     active <- fetch activeSideOfGameId
     passive <- fetch passiveSideOfGameId
     return ( activeSideOfGameId, passiveSideOfGameId, active, passive, operatorRole)
@@ -70,7 +62,6 @@ initData = do
 
   let submitMove = createSubmitMove operator operatorRole
   return InitData with ..
-
 
 orderedCoordsToMovesInner _  _  acc _  []              = reverse acc
 orderedCoordsToMovesInner wp bp acc by ((from,to)::tl) =

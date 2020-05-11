@@ -3,7 +3,8 @@ import { CreateEvent } from "@daml/ledger";
 import { useLedger } from "@daml/react";
 import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell , TableBody } from "@material-ui/core";
 import { useStyles } from "./styles";
-import { ActiveSideOfGame, DrawRequest, GameProposal, PassiveSideOfGame, GameResult } from "@daml-ts/chess-0.3.0/lib/Chess";
+import { ActiveSideOfGame, DrawRequest, Game, GameProposal, PassiveSideOfGame, GameResult } from "@daml-ts/chess-0.4.0/lib/Chess";
+import { Side } from "@daml-ts/chess-0.4.0/lib/Types";
 import { useUserState } from "../../context/UserContext";
 import { useAliasMaps } from "../../context/AliasMapContext";
 import ChessBoardDialog from "./components/ChessBoardDialog/ChessBoardDialog";
@@ -25,12 +26,24 @@ function MyButton({text, onClick}:MyButtonProp) {
   );
 }
 
+function opponent(g : Game, party : string) : string {
+  return g.proposer === party? g.opponent : g.proposer
+}
+
+function otherSide( s : Side) : Side {
+  return s === Side.White ? Side.Black : Side.White;
+}
+
+function side(g : Game | GameResult, party : string) : string {
+  return g.proposer === party? g.desiredSide : otherSide(g.desiredSide);
+}
+
 type CreateEvent_<T extends object> = CreateEvent<T, any, any>
 type GameProposalRowProp = {
   createGp : CreateEvent_<GameProposal>
 }
 
-function GameProposalRow({createGp} : GameProposalRowProp) {
+function GameProposalRow({createGp} : GameProposalRowProp ) {
   console.log(`Converting a gameProposal ${createGp.contractId}.`);
   let gp = createGp.payload;
 
@@ -85,28 +98,35 @@ function ActiveSideOfGameRow({createAs} : ActiveSideofGameRowProp) {
 
   async function claimDraw(){
     console.log("claiming a draw " + createAs.contractId);
-    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.ClaimDraw, createAs.contractId, {});
+    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.DrawClaim, createAs.contractId, {});
     console.log(`After claiming draw ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
-
   }
-  async function forfeit(){
-    console.log("forfeiting " + createAs.contractId);
-    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.Forfeit, createAs.contractId, {});
-    console.log(`After forfeiting ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
+
+  async function requestDraw(){
+    console.log("requesting a draw, active" + createAs.contractId);
+    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.ActiveDrawProposal, createAs.contractId, {});
+    console.log(`After requesting draw ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
+  }
+
+  async function surrender(){
+    console.log("surrendering, active" + createAs.contractId);
+    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.ActiveSurrender, createAs.contractId, {});
+    console.log(`After surrendering ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
   return (
     <>
       <ChessBoardDialog open={openChessBoard} side={ap.side} onClose={handleClose} game={ap.active} c={{kind:"active", contractId:createAs.contractId}} />
       <TableRow className={classes.tableRow}>
-        <TableCell className={classes.tableCell}>{ap.gameId}</TableCell>
+        <TableCell className={classes.tableCell}>{ap.game.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{ap.side}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias(ap.opponent)}</TableCell>
+        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent(ap.game, ap.player))}</TableCell>
         <TableCell className={classes.tableCell}>
           <ButtonGroup>
             <MyButton text="Move" onClick={move}/>
             <MyButton text="Claim Draw" onClick={claimDraw}/>
-            <MyButton text="Forfeit" onClick={forfeit}/>
+            <MyButton text="Request Draw" onClick={requestDraw}/>
+            <MyButton text="Surrender" onClick={surrender}/>
           </ButtonGroup>
         </TableCell>
       </TableRow>
@@ -126,16 +146,16 @@ function PassiveSideOfGameRow({createPs} : PassiveSideOfGameRowProp) {
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
 
-  async function askForADraw(){
-    console.log("asking for a draw " + createPs.contractId);
-    const [choiceReturnValue, events] = await ledger.exercise(PassiveSideOfGame.AskForADraw, createPs.contractId, {});
+  async function requestDraw(){
+    console.log("requesting a draw, passive" + createPs.contractId);
+    const [choiceReturnValue, events] = await ledger.exercise(PassiveSideOfGame.PassiveDrawProposal, createPs.contractId, {});
     console.log(`After asking for a draw ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
-  async function resign(){
-    console.log("resigning " + createPs.contractId);
-    const [choiceReturnValue, events] = await ledger.exercise(PassiveSideOfGame.Resign, createPs.contractId, {});
-    console.log(`After resigning ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
+  async function surrender(){
+    console.log("surrendering, passive" + createPs.contractId);
+    const [choiceReturnValue, events] = await ledger.exercise(PassiveSideOfGame.PassiveSurrender, createPs.contractId, {});
+    console.log(`After surrendering ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
   const [openChessBoard, setOpenChessBoard] = React.useState(false);
@@ -148,18 +168,19 @@ function PassiveSideOfGameRow({createPs} : PassiveSideOfGameRowProp) {
     setOpenChessBoard(true);
   }
 
+  const opponent_ = opponent(pp.game, pp.player); // Ideally this should be userState.party, but we'll save a React state.
   return (
     <>
       <ChessBoardDialog open={openChessBoard} side={pp.side} onClose={handleClose} game={pp.passive} c={{kind:"passive", contractId:createPs.contractId}} />
       <TableRow className={classes.tableRow} onClick={onClick}>
-        <TableCell className={classes.tableCell}>{pp.gameId}</TableCell>
-        <TableCell className={classes.tableCell}>{pp.side}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias(pp.opponent)}</TableCell>
+        <TableCell className={classes.tableCell}>{pp.game.gameId}</TableCell>
+        <TableCell className={classes.tableCell}>{side(pp.game, pp.player)}</TableCell>
+        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent_)}</TableCell>
         <TableCell className={classes.tableCell}>
-          Waiting for {aliasMap.toAlias(pp.opponent)}'s move.
+          Waiting for {aliasMap.toAlias(opponent_)}'s move.
           <ButtonGroup>
-            <MyButton text="Ask for a draw" onClick={askForADraw} />
-            <MyButton text="Resign" onClick={resign} />
+            <MyButton text="Request Draw" onClick={requestDraw} />
+            <MyButton text="Surrender" onClick={surrender} />
           </ButtonGroup>
         </TableCell>
       </TableRow>
@@ -189,23 +210,21 @@ function DrawRequestRow({createDr} : DrawRequestRowProp) {
     console.log(`After accepting draw ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
+  const opponent_ = opponent(dp.game, userState.party);
   return (
     <>
       <TableRow className={classes.tableRow}>
-        <TableCell className={classes.tableCell}>{dp.gameId}</TableCell>
-        <TableCell className={classes.tableCell}>{dp.side}</TableCell>
-        { userState.party === dp.opponent
-        ? <TableCell className={classes.tableCell}>{aliasMap.toAlias(dp.requester)}</TableCell>
-        : <TableCell className={classes.tableCell}>{aliasMap.toAlias(dp.opponent)}</TableCell>
-        }
-        { userState.party === dp.opponent
-        ? (<TableCell className={classes.tableCell}>
-            {aliasMap.toAlias(dp.requester)} requested a draw:
+        <TableCell className={classes.tableCell}>{dp.game.gameId}</TableCell>
+        <TableCell className={classes.tableCell}>{side(dp.game, userState.party)}</TableCell>
+        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent_)}</TableCell>
+        { userState.party === dp.player       // Who made this draw request
+        ? (<TableCell className={classes.tableCell}>You requested a draw.</TableCell>)
+        : (<TableCell className={classes.tableCell}>
+            {aliasMap.toAlias(dp.player)} requested a draw:
             <ButtonGroup>
               <MyButton text="Accept" onClick={accept} />
             </ButtonGroup>
           </TableCell>)
-        : (<TableCell className={classes.tableCell}>You requested a draw.</TableCell>)
         }
       </TableRow>
     </>
@@ -259,7 +278,7 @@ function GameResultRow({createGr} : GameResultRowProp) {
   return (
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
-        <TableCell className={classes.tableCell}></TableCell>
+        <TableCell className={classes.tableCell}>{side(gp, userState.party)}</TableCell>
         <TableCell className={classes.tableCell}>{gp.opponent === userState.party ? aliasMap.toAlias(gp.proposer) : aliasMap.toAlias(gp.opponent)}</TableCell>
         <TableCell className={classes.tableCell}>{gameState}</TableCell>
       </TableRow>

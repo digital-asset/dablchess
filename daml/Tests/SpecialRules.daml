@@ -4,8 +4,8 @@
 daml 1.2
 module Tests.SpecialRules where
 
+import DA.Either
 import DA.Next.Map as M
---import DA.Either
 
 import Tests.Init
 import Chess
@@ -18,8 +18,8 @@ testCastle = scenario do
 
   let game = Right (activeSideOfGameId, passiveSideOfGameId)
 
-  sameGame <- submitMove (return game) (white, White, E1, G1)
-  assertMsg "Invalid move does not advance play" (game == sameGame)
+  game <- submitMove (return game) (white, White, E1, G1)
+  assertMsg "Invalid move does not advance play" $ isRight game
 
   let moves = [ (G2, G4)
               , (G7, G6)
@@ -49,8 +49,8 @@ testCheck = scenario do
 
   let game = Right (activeSideOfGameId, passiveSideOfGameId)
 
-  sameGame <- submitMove (return game) (white, White, E1, G1 )
-  assertMsg "Invalid move does not advance play" (game == sameGame)
+  game <- submitMove (return game) (white, White, E1, G1 )
+  assertMsg "Invalid move does not advance play" $ isRight game
 
   let moves = [ (G2, G4)
               , (E7, E6)
@@ -81,8 +81,8 @@ testEnPassant = scenario do
 
   let game = Right (activeSideOfGameId, passiveSideOfGameId)
 
-  sameGame <- submitMove (return game) (white, White, B2, C3)
-  assertMsg "Invalid attempt to en-passant does not advance play" (game == sameGame)
+  game <- submitMove (return game) (white, White, B2, C3)
+  assertMsg "Invalid attempt to en-passant does not advance play" $ isRight game
   let moves = [ (B2, B4)
               , (E7, E6)
               , (B4, B5)
@@ -106,8 +106,8 @@ testPromote = scenario do
 
   let game = Right (activeSideOfGameId, passiveSideOfGameId)
 
-  sameGame <- submitMove (return game) (white, White, B2, C3)
-  assertMsg "Invalid attempt to promote does not advance play" (game == sameGame)
+  game <- submitMove (return game) (white, White, B2, C3)
+  assertMsg "Invalid attempt to promote does not advance play" $ isRight game
 
   let moves = [ (A2, A4)
               , (A7, A5)
@@ -128,8 +128,8 @@ testPromote = scenario do
   promotedGame <- case game of
     Left _ -> abort "Game should be in play"
     Right (a, _) -> do
-      activeActionId <- submit white do exercise a Move with from = A7, to = A8, promote = Some Queen
-      pareState $ submit operator do exercise operatorRole AdvancePlay with activeActionId
+      activeMoveId <- submit white do exercise a Move with from = A7, to = A8, promote = Some Queen
+      submit operator do exercise operatorRole AdvancePlay with ..
 
   case promotedGame of
     Left _ -> abort "Game should be in play"

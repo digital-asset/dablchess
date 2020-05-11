@@ -100,4 +100,4 @@ $(ui): $(target_dir) $(yarn_build_log)
 
 .PHONY: clean
 clean:
-	rm -rf $(state_dir) $(js_bindings_dir) $(bot) $(dar) $(ui)
+	rm -rf $(state_dir) $(operator_bot_dir) $(js_bindings_dir) $(bot) $(dar) $(ui)
