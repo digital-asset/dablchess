@@ -1,5 +1,9 @@
 # DABL Chess
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
+[![CircleCI](https://circleci.com/gh/leonidr-da/dablchess.svg?style=svg)](https://circleci.com/gh/leonidr-da/dablchess)
+
+
 Welcome to DABL Chess! A DAML app that can be deployed to [project:DABL](https://projectdabl.com/). DABL Chess is a fog-of-war [variant](https://en.wikipedia.org/wiki/Dark_chess) of Chess where you see only your pieces and where they can move. We demonstrate the power of [DAML](https://daml.com/) as the state of the two sides are encoded in separate [smart contracts](daml/Chess.daml); what you know depends on DAML's [ledger model](https://docs.daml.com/concepts/ledger-model/ledger-integrity.html), but you can still play via an intermediary.
 
 > Copyright (c) 2020, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved. SPDX-License-Identifier: Apache-2.0
