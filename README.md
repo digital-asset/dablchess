@@ -12,7 +12,7 @@ Welcome to DABL Chess! A DAML app that can be deployed to [project:DABL](https:/
 
 ## Deploying to [project:DABL](https://projectdabl.com/).
 
-### 1. Create a ledger to run DABL Chat on
+### 1. Create a ledger to run DABL Chess on
 
 Log in to [project:DABL](https://projectdabl.com/) and create a new ledger under an existing or a new project.
 
