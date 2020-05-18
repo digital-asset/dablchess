@@ -1,0 +1,42 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.Surrender where
+
+import Chess
+import Types
+import Tests.Init
+
+-- Test of the surrender flow
+activeSurrender = scenario do
+  InitData {..} <- initData
+
+  surrenderId <- submit white do exercise activeSideOfGameId ActiveSurrender
+  submitMustFail white do fetch activeSideOfGameId
+  submitMustFail black do exercise passiveSideOfGameId PassiveSurrender -- there can be only one.
+  submitMustFail black do exercise passiveSideOfGameId PassiveDrawProposal
+
+  submitMustFail operator do exercise surrenderId ToRequest -- Can't interpret this as a Draw
+  gameResultId <- submit operator do exercise surrenderId DeclareWinner
+
+  submitMustFail black do fetch passiveSideOfGameId   -- No more
+  gameResult <- submit black do fetch gameResultId    -- Game result instead!
+
+  assertMsg "Black wins after white forfeits" (gameResult.drawOrWinner == Winner black)
+
+passiveSurrender = scenario do
+  InitData {..} <- initData
+
+  surrenderId <- submit black do exercise passiveSideOfGameId PassiveSurrender
+  submitMustFail black do fetch passiveSideOfGameId
+  submitMustFail white do exercise activeSideOfGameId ActiveSurrender -- there can be only one.
+  submitMustFail white do exercise activeSideOfGameId ActiveDrawProposal
+
+  submitMustFail operator do exercise surrenderId ToRequest -- Can't interpret this as a Draw
+  gameResultId <- submit operator do exercise surrenderId DeclareWinner
+
+  submitMustFail white do fetch activeSideOfGameId   -- No more
+  gameResult <- submit white do fetch gameResultId    -- Game result instead!
+
+  assertMsg "White wins after black forfeits" (gameResult.drawOrWinner == Winner white)

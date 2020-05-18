@@ -1,0 +1,478 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Chess where
+
+import Rules.Draw
+import Rules.Main
+import Rules.SplitState
+import Types
+
+-- Logic to handle games.
+type GameId = Text
+type GameContractIds = (ContractId ActiveSideOfGame, ContractId PassiveSideOfGame)
+
+template GameProposal
+  with
+    gameId : GameId
+    proposer : Party
+    desiredSide : Side
+    opponent : Party
+    operator : Party
+  where
+    signatory proposer
+    -- Only one game from proposer with the same id
+    key (proposer, gameId) : (Party, GameId)
+    maintainer key._1
+
+    controller opponent can
+      Accept : ContractId GameAccept
+        do create GameAccept with ..
+
+template GameAccept
+  with
+    gameId : GameId
+    proposer : Party
+    desiredSide : Side
+    opponent : Party
+    operator : Party
+  where
+    signatory proposer, opponent
+
+    controller operator can
+      Start : ContractId Game
+        do create Game with ..
+
+template Game
+  with
+    gameId : GameId
+    proposer : Party
+    desiredSide : Side
+    opponent : Party
+    operator : Party
+  where
+    signatory proposer, opponent, operator
+    key (operator, proposer, gameId) : (Party, Party, GameId)
+    maintainer key._1
+    controller operator can
+      nonconsuming Begin : (ContractId ActiveSideOfGame, ContractId PassiveSideOfGame)
+        do
+          let (activeSide, passiveSide) =
+                case desiredSide of
+                  White -> (proposer, opponent)
+                  Black -> (opponent, proposer)
+
+          activeId <- create ActiveSideOfGame with
+                          player = activeSide
+                          side = White
+                          active = Rules.SplitState.initSplitState White
+                          game = this
+                          ..
+          passiveId <- create PassiveSideOfGame with
+                          player = passiveSide
+                          side = Black
+                          passive = Rules.SplitState.initSplitState Black
+                          game = this
+                          ..
+          return (activeId, passiveId)
+
+      End : ContractId GameResult
+        with
+          gameState : Optional GameState
+          drawOrWinner : DrawOrWinner Party
+        do create GameResult with ..
+
+oppositePlayer : Game -> Party -> Party
+oppositePlayer game party = if game.proposer == party
+                            then game.opponent
+                            else game.proposer
+
+sideToParty : Game -> Side -> Party
+sideToParty game side = if side == game.desiredSide
+                        then game.proposer
+                        else game.opponent
+
+translateDrawType : Game -> DrawType Side -> DrawType Party
+translateDrawType g (PlayerDraw s)      = PlayerDraw (sideToParty g s)
+translateDrawType _ Stalemate           = Stalemate
+translateDrawType _ ThreefoldRepetition = ThreefoldRepetition
+translateDrawType _ FiftyMoveRule       = FiftyMoveRule
+
+translateDrawOrWinner : Game -> DrawOrWinner Side -> DrawOrWinner Party
+translateDrawOrWinner g (Draw dt) = Draw (translateDrawType g dt)
+translateDrawOrWinner g (Winner s) = Winner (sideToParty g s)
+
+template GameResult
+  with
+    gameId : GameId
+    proposer : Party
+    desiredSide : Side
+    opponent : Party
+    operator : Party
+    gameState : Optional GameState
+    drawOrWinner : DrawOrWinner Party
+  where
+    signatory proposer, opponent, operator
+    key (operator, gameId) : (Party, GameId)
+    maintainer key._1
+
+template PassiveSideOfGame
+  with
+    player : Party
+    side : Side
+    passive : SplitGameState
+    game : Game
+  where
+    signatory player, game.operator
+    key (game, side) : (Game, Side)                   -- This extra Side facilitates self play.
+    maintainer key._1.operator
+
+    controller game.operator can
+      Activate : ContractId ActiveSideOfGame          -- Waits for the active side to make a legal move.
+        with
+          active : SplitGameState
+        do create ActiveSideOfGame with ..
+      DeclareWinnerPassive : ContractId GameResult    -- Active can surrender while they wait.
+        with
+          result : ContractId GameResult
+        do return result
+
+    controller player can
+      PassiveSurrender : ContractId EndGameProposal   -- Or Passive can surrender.
+        do create EndGameProposal with state = Left passive, drawOrWinner = Winner (oppositePlayer game player), ..
+
+      PassiveDrawProposal : ContractId EndGameProposal -- Or request a draw.
+        do create EndGameProposal with state = Left passive, drawOrWinner = Draw (PlayerDraw player), ..
+
+-- It is the active side's turn.
+template ActiveSideOfGame
+  with
+    player : Party
+    side : Side
+    active : SplitGameState
+    game : Game
+  where
+    let opponent = oppositePlayer game player
+    signatory player, game.operator
+    key game : Game
+    maintainer key.operator
+
+    controller player can
+      Move : ContractId ActiveMove
+        with
+          from : Coord
+          to : Coord
+          promote : Optional PieceType
+        do
+          let move = ChessMove with by = side, ..
+          create ActiveMove with move, ..
+
+      DrawClaim : ContractId ActiveDrawClaim
+        do create ActiveDrawClaim with ..
+
+      ActiveSurrender : ContractId EndGameProposal
+        do create EndGameProposal with state = Right active, drawOrWinner = Winner opponent, ..
+
+      ActiveDrawProposal : ContractId EndGameProposal
+        do create EndGameProposal with  state = Right active, drawOrWinner = Draw (PlayerDraw player), ..
+
+    controller game.operator can
+      DeclareWinnerActive : ContractId GameResult --
+        with result : ContractId GameResult
+        do return result
+
+-- The operator will act on the EndGameProposal to either end the game
+-- or create a DrawRequest.
+-- If that is accepted we archive with a GameResult otherwise we revert.
+-- We'll use _one_ contract for both the active and passive side to prevent
+-- a race condition between the two parties
+template EndGameProposal
+  with
+    player : Party                                -- who requests the end
+    side : Side                                   -- their side
+    game : Game
+    state : Either SplitGameState SplitGameState  -- Left: passive, Right:active
+    drawOrWinner : DrawOrWinner Party
+  where
+    signatory player, game.operator
+    key game : Game     -- only one player can propose an end (draw or surrender) at a time
+    maintainer key.operator
+
+    let opponent = oppositePlayer game player
+        cleanUpWithResult result = do
+          case state of
+            Left _passive -> do cleanUpActiveContracts game result
+            Right _active -> do
+              passiveId <- fst <$> fetchByKey @PassiveSideOfGame (game, opposite side)
+              exercise passiveId DeclareWinnerPassive with ..
+              return result
+
+    controller game.operator can
+      -- If a Surrender
+      DeclareWinner : ContractId GameResult
+        do
+          assert $ drawOrWinner == Winner opponent
+          gId <- fst <$> fetchByKey @Game (key game)
+          gameResultId <- exercise gId End with gameState = None, ..
+          cleanUpWithResult gameResultId
+
+      -- Else a Draw Request
+      nonconsuming ToRequest : ContractId DrawRequest
+        do
+          assert $ drawOrWinner == Draw (PlayerDraw player)
+          create DrawRequest with proposal = self, ..
+
+      Accepted : ContractId GameResult
+        with result : ContractId GameResult
+        do cleanUpWithResult result
+
+      PassiveRejected : ContractId ActiveSideOfGame
+        with rejectId : ContractId RejectedDrawRequest
+        do case state of
+            Left _ -> abort "this request can only be made after an active draw proposal"
+            Right active -> do create ActiveSideOfGame with ..
+
+      ActiveRejected : ContractId PassiveSideOfGame
+        with rejectId : ContractId RejectedDrawRequest
+        do case state of
+            Left passive -> do create PassiveSideOfGame with ..
+            Right _ -> abort "this request can only be made after a passive draw proposal"
+
+template DrawRequest
+  with
+    player : Party
+    game : Game
+    proposal : ContractId EndGameProposal
+  where
+    let opponent = oppositePlayer game player
+    signatory game.operator, player
+    observer opponent
+
+    key game : Game
+    maintainer key.operator
+
+    controller opponent can
+      AcceptDrawRequest : ContractId AcceptedDrawRequest
+        do create AcceptedDrawRequest with accepter = opponent, ..
+
+      RejectDrawRequest : ContractId RejectedDrawRequest
+        do create RejectedDrawRequest with rejecter = opponent, ..
+
+template AcceptedDrawRequest
+  with
+    accepter : Party
+    game : Game
+    proposal : ContractId EndGameProposal
+  where
+    signatory game.operator, accepter
+    key game : Game
+    maintainer key.operator
+
+    controller game.operator can
+      ArchiveAcceptedDrawbyOperator : ContractId GameResult
+        with result : ContractId GameResult
+        do return result
+
+template RejectedDrawRequest
+  with
+    rejecter : Party
+    game : Game
+    proposal : ContractId EndGameProposal
+  where
+    signatory game.operator, rejecter
+    key game : Game
+    maintainer key.operator
+
+    controller game.operator can
+      ArchiveRejectedDrawbyOperator : ()
+        do return ()
+
+template ActiveMove
+  with
+    player : Party              -- Party who moved
+    side : Side                 -- their side.
+    move : ChessMove
+    active : SplitGameState
+    game : Game
+  where
+    signatory player, game.operator
+    key game : Game
+    maintainer key.operator
+
+    controller game.operator can
+      RejectMove : ContractId ActiveSideOfGame
+        do create ActiveSideOfGame with ..
+
+      Inactivate : ContractId PassiveSideOfGame
+        with
+          passive : SplitGameState
+        do create PassiveSideOfGame with ..
+
+      DeclareWinnerActiveAfterMove : ContractId GameResult --
+        with result : ContractId GameResult
+        do return result
+
+-- There are draw conditions, three fold repitition and fifty moves that are optional,
+-- they only allow a draw if one of the players claims that they exist.
+template ActiveDrawClaim
+  with
+    player : Party              -- Party who claims there's a draw.
+    side : Side
+    active : SplitGameState
+    game : Game
+  where
+    signatory player, game.operator
+    key game : Game
+    maintainer key.operator
+
+    controller game.operator can
+      RejectDrawClaim : ContractId ActiveSideOfGame
+        do create ActiveSideOfGame with ..
+
+      AcceptDrawClaim : ContractId GameResult     -- If the Passive side surrenders at the same time
+                                                  -- this turns into a win!
+        with
+          result : ContractId GameResult
+        do return result
+
+
+joinGameStatesO : Side -> SplitGameState -> PassiveSideOfGame -> GameState
+joinGameStatesO activeSide active passiveSide =
+  if activeSide == White
+  then joinGameStates active passiveSide.passive
+  else joinGameStates passiveSide.passive active
+
+-- We have to walk the potential chain of active contracts and archive them
+cleanUpActiveContracts : Game -> ContractId GameResult -> Update (ContractId GameResult)
+cleanUpActiveContracts game result = do
+  activeSideOfGameIdOpt <- lookupByKey @ActiveSideOfGame game
+  case activeSideOfGameIdOpt of
+    Some activeId -> do exercise activeId DeclareWinnerActive with ..
+    None -> do
+      activeMoveIdOpt <- lookupByKey @ActiveMove game
+      case activeMoveIdOpt of
+        Some activeMoveId -> do exercise activeMoveId DeclareWinnerActiveAfterMove with ..
+        None -> do
+          activeDrawClaimIdOpt <- lookupByKey @ActiveDrawClaim game
+          case activeDrawClaimIdOpt of
+            Some activeDrawClaimId -> do exercise activeDrawClaimId AcceptDrawClaim with ..
+            None -> do return result -- I don't think that this could exist.
+
+template OperatorRole
+  with
+    operator : Party
+  where
+    signatory operator
+
+    key operator: Party
+    maintainer key
+
+    controller operator can
+      -- operator's reaction to the existence of an ActiveMove
+      nonconsuming AdvancePlay : Either (ContractId GameResult) GameContractIds
+        with
+          activeMoveId : ContractId ActiveMove
+        do
+          -- Look up move information from ActiveMove and archive it
+          action <- fetch activeMoveId
+          let opponent = oppositePlayer action.game action.player
+
+          (passiveId, passiveSide) <- fetchByKey @PassiveSideOfGame (action.game, opposite action.side)
+          let gameState = joinGameStatesO action.side action.active passiveSide
+          case tryMove gameState action.move of
+            -- determine potential winner
+            DrawOrWinner dow ->
+              let drawOrWinner = translateDrawOrWinner action.game dow
+                  finalGameState = (gameState with moves = action.move :: gameState.moves)
+              in
+              do
+                (gId, _) <- fetchByKey @Game (key action.game)
+                gameResultId <- exercise gId End with gameState = Some finalGameState, ..
+                exercise activeMoveId DeclareWinnerActiveAfterMove with result = gameResultId
+                exercise passiveId DeclareWinnerPassive with result = gameResultId
+                return $ Left gameResultId
+            Error e ->
+              do
+                --abort e  -- What mechanism exists to warn to alert the user?
+                let () = traceRaw ("Error: " <> e) ()
+                activeId <- exercise activeMoveId RejectMove
+                return $ Right (activeId, passiveId)
+            -- alternate states
+            NewState newJoinedState ->
+              let whiteState = splitGameStateOfSide White newJoinedState
+                  blackState = splitGameStateOfSide Black newJoinedState
+                  (active, passive) =
+                    case action.side of
+                      White -> (blackState, whiteState)
+                      Black -> (whiteState, blackState)
+              in
+              do
+                passiveId' <- exercise activeMoveId Inactivate with passive
+                activeId' <- exercise passiveId Activate with active
+                return $ Right (activeId', passiveId')
+
+      nonconsuming ConsiderDrawClaim : Either (ContractId GameResult) GameContractIds
+        with
+          activeDrawClaimId : ContractId ActiveDrawClaim
+        do
+          claimDraw <- fetch activeDrawClaimId
+          let player = claimDraw.player
+              opponent = oppositePlayer claimDraw.game player
+
+          (passiveId, passiveSide) <- fetchByKey @PassiveSideOfGame (claimDraw.game, opposite claimDraw.side)
+          let gameState = joinGameStatesO claimDraw.side claimDraw.active passiveSide
+          case checkDraw gameState of
+            None -> -- not a draw
+              do
+                activeId <- exercise activeDrawClaimId RejectDrawClaim
+                return $ Right (activeId, passiveId)
+            Some drawType ->
+              do
+                let drawOrWinner = Draw (translateDrawType claimDraw.game drawType)
+                (gId, _) <- fetchByKey @Game (key claimDraw.game)
+                gameResultId <- exercise gId End with gameState = Some gameState, ..
+                exercise activeDrawClaimId AcceptDrawClaim with result = gameResultId
+                exercise passiveId DeclareWinnerPassive with result = gameResultId
+                return $ Left gameResultId
+
+      -- operator's reaction to an EndGameProposal
+      nonconsuming ProcessEndGameProposal : () --
+        with
+          endGameProposalId : ContractId EndGameProposal
+        do
+          endGameProposal <- fetch endGameProposalId
+          case endGameProposal.drawOrWinner of
+            Winner _  ->
+              do
+                exercise endGameProposalId DeclareWinner
+                return ()
+            Draw _ ->
+              do
+                exercise endGameProposalId ToRequest
+                return ()
+
+      nonconsuming AcknowledgeAcceptedDraw : ContractId GameResult
+        with
+          acceptedDrawRequestId : ContractId AcceptedDrawRequest
+        do
+          acceptedDrawRequest <- fetch acceptedDrawRequestId
+          drawProposal <- fetch acceptedDrawRequest.proposal
+          (gId, _) <- fetchByKey @Game (key acceptedDrawRequest.game)
+          result <- exercise gId End with gameState = None, drawOrWinner = drawProposal.drawOrWinner
+          exercise acceptedDrawRequestId ArchiveAcceptedDrawbyOperator with ..
+          exercise acceptedDrawRequest.proposal Accepted with ..
+
+      nonconsuming AcknowledgeRejectedDraw : ()
+        with
+          rejectedDrawRequestId : ContractId RejectedDrawRequest
+        do
+          rejectedDrawRequest <- fetch rejectedDrawRequestId
+          drawProposal <- fetch rejectedDrawRequest.proposal
+          case drawProposal.state of
+            Left _ -> do
+                exercise rejectedDrawRequest.proposal ActiveRejected with rejectId = rejectedDrawRequestId
+                exercise rejectedDrawRequestId ArchiveRejectedDrawbyOperator
+            Right _ -> do
+                exercise rejectedDrawRequest.proposal PassiveRejected with rejectId = rejectedDrawRequestId
+                exercise rejectedDrawRequestId ArchiveRejectedDrawbyOperator

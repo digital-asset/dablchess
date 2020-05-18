@@ -1,0 +1,75 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Rules.Draw where
+
+-- Handle requests for a draw.
+
+import DA.Foldable
+import DA.List as L
+import DA.Next.Map as M
+
+import Types
+
+import Rules.Data
+import qualified Rules.Moves as Moves
+
+data OrdGameState = OrdGameState with
+  side : Side
+  pieces : Map Coord Piece
+    deriving (Eq, Show, Ord)
+
+data DrawState = DrawState with
+  idleMoves : Int
+  stateCounts : [(OrdGameState, Int)]
+  gameState : GameState
+
+toOrd : GameState -> OrdGameState
+toOrd gs = OrdGameState with
+  side = gs.side
+  pieces = gs.pieces
+
+increment : (Ord a) => a -> [(a, Int)] -> [(a, Int)]
+increment k list =
+  let
+    filtered = L.filter (\(a, _) -> a /= k) list
+    elem = find (\(a, _) -> a == k) list
+  in case elem of
+      None -> (k, 1) :: filtered
+      Some (_, i) -> (k, i + 1) :: filtered
+
+-- Since we're replayig already accepted moves, we can assume that they're legal
+moveFun : ChessMove -> DrawState -> DrawState
+moveFun mv ds =
+  let (ngs, idleMove) =
+        case Moves.validMove ds.gameState mv of
+          Left e -> error $ "You assumed this move was legal: " <> e
+          Right (piece, moc) ->
+            let capture = Moves.isCapture moc
+                pawnMove = piece.tp == Pawn
+                ns = Moves.updateTurn $ Moves.move_ ds.gameState piece moc
+            in
+            (ns, not (capture || pawnMove ) )
+  in
+  ds with
+      gameState = ngs
+      idleMoves = if idleMove then 0 else ds.idleMoves + 1
+      stateCounts = increment (toOrd ngs) ds.stateCounts
+
+
+checkDraw : GameState -> Optional (DrawType Side)
+checkDraw gs =
+  let is = initState ()
+      ids = DrawState with
+                      idleMoves = 0
+                      stateCounts = [(toOrd is, 1)]
+                      gameState = is
+      fds = L.foldr moveFun ids gs.moves
+      maxRepeats = maximum $ map snd fds.stateCounts
+  in
+   if maxRepeats >= 3
+   then Some ThreefoldRepetition
+   else if fds.idleMoves >= 50
+        then Some FiftyMoveRule
+        else None

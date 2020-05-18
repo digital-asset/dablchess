@@ -1,0 +1,24 @@
+
+daml 1.2
+module InitScript where
+
+import Prelude hiding (submit)
+import Daml.Script
+
+import Chess
+import Types
+
+setup : Script ()
+setup = do
+  alice <- allocatePartyWithHint "Alice" $ PartyIdHint with partyIdHint = "Alice"
+  bob <- allocatePartyWithHint "Bob" $ PartyIdHint with partyIdHint = "Bob"
+  ref <- allocatePartyWithHint "Ref" $ PartyIdHint with partyIdHint = "Ref"
+
+  submit alice do createCmd GameProposal with
+                    gameId = "Game 1"
+                    proposer = alice
+                    desiredSide = White
+                    opponent = bob
+                    operator = ref
+
+  pure ()

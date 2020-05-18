@@ -1,0 +1,378 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Rules.Moves where
+-- | What are the possible moves that we can make.
+
+import DA.List qualified as L
+import DA.Next.Map qualified as M
+import DA.Optional
+
+import Types
+import Rules.Data
+
+onBoard1 : Int -> Bool
+onBoard1 c = 0 <= c && c <= 7
+
+onBoard : IntCoord -> Bool
+onBoard (c, r) = onBoard1 c && onBoard1 r
+
+onlyOnBoard : IntCoord -> Optional Coord
+onlyOnBoard ic = if onBoard ic then Some (toCoord ic) else None
+
+knightOffsets = [ (1,2), (2,1), (2,-1), (1,-2), (-1,-2), (-2,-1), (-2,1), (-1,2) ]
+
+knightPositions : IntCoord -> [IntCoord]
+knightPositions (col, row) = mapOptional toOffsetOpt knightOffsets
+    where toOffsetOpt (c, r) =
+            let np = (col + c, row + r) in
+            if onBoard np then Some np else None
+
+data Direction = Up
+               | RightUp
+               | Right_
+               | RightDown
+               | Down_
+               | LeftDown
+               | Left_
+               | LeftUp
+    deriving (Eq, Enum)
+
+moveD : IntCoord -> Direction -> IntCoord
+moveD (c, r)  Up        = (c,     r + 1)
+moveD (c, r)  RightUp   = (c + 1, r + 1)
+moveD (c, r)  Right_    = (c + 1, r    )
+moveD (c, r)  RightDown = (c + 1, r - 1)
+moveD (c, r)  Down_     = (c,     r - 1)
+moveD (c, r)  LeftDown  = (c - 1, r - 1)
+moveD (c, r)  Left_     = (c - 1, r)
+moveD (c, r)  LeftUp    = (c - 1, r + 1)
+
+-- It would be easier to define many of these smaller functions within the
+-- possibleMoves context so that they can refer to the piece.owner and gamestate
+occupied : PieceMap -> Coord -> Bool
+occupied pm c = M.member c pm
+
+atPos : PieceMap -> Coord -> Optional Piece
+atPos pm c = M.lookup c pm
+
+oppositeAt : Side -> PieceMap -> Coord -> Optional Piece
+oppositeAt side pm c = atPos pm c >>= \p -> if p.owner /= side then Some p else None
+
+data MoveOrCapture
+    = Move Coord
+    | Capture Piece
+    | EnPassant with eto : Coord, ecap : Piece
+    | Promotion with np : Piece , pcap : Optional Piece
+    | Castle with kingTo : Coord, rook : Piece, rookTo : Coord
+    deriving (Eq, Show)
+
+isCapture : MoveOrCapture -> Bool
+isCapture (Move _)          = False
+isCapture (Capture _)       = True
+isCapture (EnPassant _ _)   = True
+isCapture (Promotion _ _)   = True
+isCapture (Castle _ _ _)    = False
+
+notOccupied : PieceMap -> [IntCoord] -> [MoveOrCapture]
+notOccupied pm = fmap Move . filter (not . occupied pm) . mapOptional onlyOnBoard
+
+onlyCapture : Side -> PieceMap -> Coord -> Optional MoveOrCapture
+onlyCapture side pm c = oppositeAt side pm c >>= \p -> Some $ Capture p
+
+onlyCaptures : Side -> PieceMap -> [IntCoord] -> [MoveOrCapture]
+onlyCaptures side pm = mapOptional (onlyCapture side pm) . mapOptional onlyOnBoard
+
+moveOrCapture : Side -> PieceMap -> Coord -> Optional MoveOrCapture
+moveOrCapture side pm c =
+    case atPos pm c of
+        None -> Some $ Move c
+        Some p -> if p.owner == side
+                  then None
+                  else Some $ Capture p
+
+movesOrCaptures : Side -> PieceMap -> [IntCoord] -> [MoveOrCapture]
+movesOrCaptures side pm = mapOptional (moveOrCapture side pm) . mapOptional onlyOnBoard
+
+follow : Side -> PieceMap -> IntCoord -> Direction -> [MoveOrCapture]
+follow side pm ic d =
+    let nic = moveD ic d in
+    if not $ onBoard nic
+    then []
+    else let nc = toCoord nic in
+         case atPos pm nc of
+            None -> Move nc :: follow side pm nic d
+            Some p -> if p.owner == side
+                      then []
+                      else [Capture p]
+
+followDs : Side -> PieceMap -> IntCoord -> [Direction] -> [MoveOrCapture]
+followDs side pm ic ds = concatMap (follow side pm ic) ds
+
+-- Pawn special cases.
+promotionTypes : [PieceType]
+promotionTypes = [ Queen, Bishop, Knight, Rook]
+
+possiblePromotions : Side -> Coord -> [Piece]
+possiblePromotions owner coord = map (\tp -> Piece with moved = False, .. ) promotionTypes
+
+-- We'll convert regular moves/captures by pawns into Promotions in a second pass.
+labelAsPromotion : Side -> MoveOrCapture -> [MoveOrCapture]
+labelAsPromotion owner (Move coord)  = map (\np -> Promotion with np, pcap = None) $ possiblePromotions owner coord
+labelAsPromotion owner (Capture cap) = map (\np -> Promotion with np, pcap = Some cap) $ possiblePromotions owner cap.coord
+labelAsPromotion _     _             = error "Silly programmer a Pawn can't do that!"
+
+-- For FogOfWar style we want to have 2 notions of Pawn "moves"
+-- 1. What is a legal move? ex. moving forward into an unblocked position.  (True)
+-- 2. What is visible? ex. can't move forward, therefore there is a piece.  (False)
+data PawnVisibility
+    = LegalMoves
+    | VisibleSpaces
+
+possiblePawnMoves : PawnVisibility -> Side -> Coord -> GameState -> [MoveOrCapture]
+possiblePawnMoves pawnVisibility owner coord gs =
+    let capturePiecesAt = onlyCaptures owner gs.pieces
+        notOccupiedAt = notOccupied gs.pieces
+        ic = toIntCoord coord
+        (c, r) = ic
+        checkEnPassant : () -> [MoveOrCapture]
+        checkEnPassant () =
+            case gs.moves of
+                m :: _ ->
+                    let oppositeSide = m.by /= owner
+                        lastMovedPiece = M.lookup m.to gs.pieces
+                        movedTwo = rowD (toIntCoord m.from) (toIntCoord m.to) == 2
+                        col = fst $ toIntCoord m.from
+                        pastMyAttacks = col == (c-1) || col == (c+1)
+                    in
+                    case lastMovedPiece of
+                        Some p -> if p.tp == Pawn && oppositeSide && movedTwo && pastMyAttacks
+                                    then let row = if owner == White then r + 1 else r - 1 in
+                                         [ EnPassant with eto = toCoord (col, row), ecap = p ]
+                                    else []
+                        None -> []
+                _ -> []
+        coordsToMoves : [IntCoord] -> [MoveOrCapture]
+        coordsToMoves = movesOrCaptures owner gs.pieces . filter onBoard
+        -- These aren't really captures.
+        commonMoves : () -> [MoveOrCapture]
+        commonMoves () = coordsToMoves $ map (moveD ic) dirs
+            where dirs = case owner of
+                            White -> [LeftUp, Up, RightUp]
+                            Black -> [LeftDown, Down_, RightDown ]
+    in
+    case (pawnVisibility, owner, r) of
+        (_,             White, 0)   -> error "Pawns can't move backwards"
+        (_,             White, 7)   -> error "Must promote before end."
+        (LegalMoves,    White, 1)   -> notOccupiedAt [(c, r+1), (c, r+2)] ++
+                                       capturePiecesAt [(c-1,r+1), (c+1,r+1)]
+        (LegalMoves,    White, 4)   -> notOccupiedAt [(c, r+1)] ++
+                                       capturePiecesAt [(c-1,r+1), (c+1,r+1)] ++
+                                       checkEnPassant ()
+        (LegalMoves,    White, 6)   -> let regularMoves = notOccupiedAt [(c, r+1)] ++ capturePiecesAt [(c-1,r+1), (c+1,r+1)] in
+                                       concatMap (labelAsPromotion White) regularMoves
+
+        (LegalMoves,    White, _)   -> notOccupiedAt [(c, r+1)] ++
+                                       capturePiecesAt [(c-1,r+1), (c+1,r+1)]
+        (VisibleSpaces, White, 1)   -> commonMoves () ++ coordsToMoves [ moveD (moveD ic Up) Up ]
+        (VisibleSpaces, White, 4)   -> commonMoves () ++ checkEnPassant ()
+        (VisibleSpaces, White, _)   -> commonMoves ()
+
+        (_,             Black, 7)   -> error "Pawns can't move backwards"
+        (_,             Black, 0)   -> error "Must promote before end."
+        (LegalMoves,    Black, 6)   -> notOccupiedAt [(c, r - 1), (c, r - 2)] ++
+                                       capturePiecesAt [(c-1,r-1), (c+1,r-1)]
+        (LegalMoves,    Black, 3)   -> notOccupiedAt [(c, r - 1)] ++
+                                       capturePiecesAt [(c-1,r-1), (c+1,r-1)] ++
+                                       checkEnPassant ()
+        (LegalMoves,    Black, 1)   -> let regularMoves = notOccupiedAt [(c, r - 1)] ++ capturePiecesAt [(c-1,r-1), (c+1,r-1)] in
+                                       concatMap (labelAsPromotion Black) regularMoves
+        (LegalMoves,    Black, _)   -> notOccupiedAt [(c, r - 1)] ++
+                                       capturePiecesAt [(c-1,r-1), (c+1,r-1)]
+        (VisibleSpaces, Black, 6)   -> commonMoves () ++ coordsToMoves [ moveD (moveD ic Down_) Down_ ]
+        (VisibleSpaces, Black, 3)   -> commonMoves () ++ checkEnPassant ()
+        (VisibleSpaces, Black, _)   -> commonMoves ()
+
+unmovedRookAt : GameState -> Coord -> Optional Piece
+unmovedRookAt gs c =
+    case atPos gs.pieces c of
+        Some r | r.tp == Rook && not r.moved -> Some r
+        _ -> None
+
+-- coords : position between the King and Rook, ordered by King's movement.
+castleIfOkPositions : GameState -> [Coord] -> Coord -> Optional (MoveOrCapture)
+castleIfOkPositions gs coords rookCoord =
+    if any (occupied gs.pieces) coords
+        -- && any (kingCheckedAt gs) (take 2 coords)
+    then None
+    else unmovedRookAt gs rookCoord >>= \rook ->
+            Some $ Castle with
+                            kingTo = coords L.!! 1
+                            rook
+                            rookTo = L.head coords
+
+possibleKingMoves : Bool -> Side -> Coord -> GameState -> [MoveOrCapture]
+possibleKingMoves True side coord gs =
+    let ic = toIntCoord coord in
+    movesOrCaptures side gs.pieces $ filter onBoard $ fmap (moveD ic) [Up .. ]
+possibleKingMoves False White coord gs =
+    let regularMoves = possibleKingMoves True White coord gs in
+    if gs.inCheck || coord /= E1
+    then regularMoves
+    else let leftCastle = castleIfOkPositions gs [D1, C1, B1] A1
+             rightCastle = castleIfOkPositions gs [F1, G1] H1
+         in
+         catOptionals [leftCastle, rightCastle] ++ regularMoves
+possibleKingMoves False Black coord gs =
+    let regularMoves = possibleKingMoves True Black coord gs in
+    if gs.inCheck || coord /= E8
+    then regularMoves
+    else let leftCastle = castleIfOkPositions gs [D8, C8, B8] A8
+             rightCastle = castleIfOkPositions gs [F8, G8] H8
+         in
+         catOptionals [leftCastle, rightCastle] ++ regularMoves
+
+
+possibleMoves : PawnVisibility -> Piece -> GameState -> [MoveOrCapture]
+possibleMoves pawnVisibility piece gs =
+    let ps = piece.owner
+        pm = gs.pieces
+        ic = toIntCoord piece.coord
+    in
+    case piece.tp of
+        Pawn -> possiblePawnMoves pawnVisibility piece.owner piece.coord gs
+        Knight -> movesOrCaptures ps pm $ knightPositions ic
+        Bishop -> followDs ps pm ic [RightUp, RightDown, LeftDown, LeftUp]
+        Rook -> followDs ps pm ic [Up, Right_, Down_, Left_]
+        Queen -> followDs ps pm ic [Up .. ]
+        -- TODO: Prevent moving into check here?
+        King -> possibleKingMoves piece.moved piece.owner piece.coord gs
+
+-- The type of the f in foldMoves
+-- the piece is repeated for all possible MoveOrCapture's
+type FoldMoveFunction a = a -> Piece -> MoveOrCapture -> a
+
+foldMovesS : PawnVisibility -> FoldMoveFunction a -> a -> GameState -> a
+foldMovesS pawnVisibility f a gs = foldl fp a side_pieces
+    where fp a piece = foldl (\a mc -> f a piece mc) a (possibleMoves pawnVisibility piece gs)
+          side_pieces = mapOptional (\(_c,p) -> if p.owner == gs.side then Some p else None) $ M.toList gs.pieces
+
+-- | Public
+foldMoves : FoldMoveFunction a -> a -> GameState -> a
+foldMoves = foldMovesS LegalMoves
+
+findMove : GameState -> ChessMove -> Optional (Piece, MoveOrCapture)
+findMove gs move = foldMoves foundIt None gs
+    where match by co ca = if move.from == by.coord && move.to == co then Some (by, ca) else None
+          foundIt : Optional (Piece, MoveOrCapture) -> Piece -> MoveOrCapture -> Optional (Piece, MoveOrCapture)
+          foundIt s@(Some _) _by _mc                    = s
+          foundIt None       by  ca@(Move ic)           = match by ic ca
+          foundIt None       by  ca@(Capture c)         = match by c.coord ca
+          foundIt None       by  ca@(EnPassant eto _)   = match by eto ca       -- The capture is implicit in the description.
+          foundIt None       by  ca@(Promotion np _)    = if move.from == by.coord && move.to == np.coord && move.promote == Some np.tp
+                                                          then Some (by, ca)
+                                                          else None
+          foundIt None       by  ca@(Castle kingTo _ _) = match by kingTo ca
+
+-- Return a reason why this move is invalid.
+validMove : GameState -> ChessMove -> Either Text (Piece, MoveOrCapture)
+validMove gs move =
+    if move.by /= gs.side then
+        Left $ "Not " <> show move.by <> "'s turn."
+    else case atPos gs.pieces move.from of
+            None -> Left $ "No piece at " <> show move.from <> "."
+            Some p ->
+                if p.owner /= gs.side then
+                    Left $ "Not " <> show gs.side <> "'s piece."
+                else
+                    case findMove gs move of
+                        None -> Left $ (show move.from <> " -> " <> show move.to <> " not a valid move for a " <> show p.tp <> ".")
+                        Some (p,m) -> Right (p,m)
+
+findKing : GameState -> Piece
+findKing gs =
+    case L.find (\(_, p) -> p.tp == King && p.owner == gs.side) $ M.toList gs.pieces of
+        None -> error "No King!"
+        Some (_, kp) -> kp
+
+-- In the given state, are any moves attacking the king?
+checkedBy : GameState -> Optional Piece
+checkedBy gs = foldMoves kingAttacked None (gs with side = opposite gs.side)
+    where king = findKing gs
+          kingAttacked (Some by) _by    _mc             = (Some by)
+          kingAttacked None       by    (Capture p)     = if p == king then Some by else None
+          kingAttacked None       by    _               = None
+
+-- Have to keep this here (and not in States) to prevent King from moving into check.
+checked : GameState -> Bool
+checked gs = isSome $ checkedBy gs
+
+-- For castling we need to consider alternate king positions.
+kingCheckedAt : GameState -> Coord -> Bool
+kingCheckedAt gs coord = checked afterKingMoved
+    where king = findKing gs
+          afterKingMoved = gs with pieces = movePiece king coord gs.pieces
+
+
+-- This is what is recorded on the moves history.
+mocToMove : Side -> Piece -> MoveOrCapture -> ChessMove
+mocToMove by piece (Move ic)           = ChessMove with from = piece.coord, to = ic, by, promote = None
+mocToMove by piece (Capture cp)        = ChessMove with from = piece.coord, to = cp.coord, by, promote = None
+mocToMove by piece (EnPassant eto _)   = ChessMove with from = piece.coord, to = eto, by, promote = None
+mocToMove by piece (Promotion np pcap) = ChessMove with from = piece.coord, to = np.coord, by, promote = Some np.tp
+mocToMove by piece (Castle kingTo _ _) = ChessMove with from = piece.coord, to = kingTo, by, promote = None
+
+movePiece : Piece -> Coord -> PieceMap -> PieceMap
+movePiece p newCoord pm = M.insert newPiece.coord newPiece boardWithoutPiece
+    where boardWithoutPiece = M.delete p.coord pm
+          newPiece = p with coord = newCoord, moved = True
+
+playMove : Piece -> PieceMap -> MoveOrCapture -> PieceMap
+playMove p pieceMap (Move c)                = movePiece p c pieceMap
+playMove p pieceMap (Capture c)             = movePiece p c.coord pieceMap
+playMove p pieceMap (EnPassant eto ecap)    = movePiece p eto (M.delete ecap.coord pieceMap)
+playMove p pieceMap (Promotion np _pcap)    = M.insert np.coord np (M.delete p.coord pieceMap) -- capture is implicit.
+playMove p pieceMap (Castle kingTo rook rookTo)
+                                            = movePiece p kingTo (movePiece rook rookTo pieceMap)
+
+-- Apply move to game state.
+-- Does not update side, inCheck or everCheck
+move_ : GameState -> Piece -> MoveOrCapture -> GameState
+move_ gs piece mc =
+    gs with
+      pieces = playMove piece gs.pieces mc
+      moves = (mocToMove gs.side piece mc) :: gs.moves
+
+updateTurn : GameState -> GameState
+updateTurn gs =
+  let oppositeSide = opposite gs.side
+      checked' = checked (gs with side = oppositeSide)
+  in
+  gs with
+      side = oppositeSide
+      inCheck = checked'
+      everCheck =
+        case oppositeSide of
+          White -> gs.everCheck with white = gs.everCheck.white || checked'
+          Black -> gs.everCheck with black = gs.everCheck.black || checked'
+
+
+-- | Verify that a move is legal (and make it) or tell me why it is not.
+legal : GameState -> ChessMove -> Either Text GameState
+legal state mv = do
+  (piece, moc) <- validMove state mv
+  let ns = move_ state piece moc
+  if checked ns
+  then Left "Still in Check"
+  else Right (updateTurn ns)
+
+-- Used to determine what coordinates are visible for FogOfWar style chess.
+visibleCoords : Side -> GameState -> SplitPieceMap
+visibleCoords side gs = foldMovesS VisibleSpaces justCoords M.empty (gs with side = side)
+    where justCoords : SplitPieceMap -> Piece -> MoveOrCapture -> SplitPieceMap
+          justCoords m _ (Move coord)               = M.insert coord None m
+          justCoords m _ (Capture p)                = M.insert p.coord (Some p) m
+          justCoords m _ (EnPassant {eto, ecap})    = M.insert eto None $ M.insert ecap.coord (Some ecap) m
+          justCoords m _ (Promotion {np, pcap})     = M.insert np.coord pcap m
+          justCoords m _ (Castle {kingTo, rookTo})  = M.insert kingTo None $ M.insert rookTo None m

@@ -1,0 +1,29 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Rules.States where
+
+import Types
+import Rules.Moves
+
+-- | What are the states of the game board?
+
+inCheckAfter : GameState -> Piece -> MoveOrCapture -> Bool
+inCheckAfter gs piece mc = checked $ move_ gs piece mc
+
+inCheckMate : GameState -> Bool
+inCheckMate gs =
+    let inCheckNow = checked gs
+        inCheckAfter' = inCheckAfter gs
+    in         -- in check after all possible moves
+    inCheckNow && foldMoves (\p piece mc -> p && inCheckAfter' piece mc) True gs
+
+inStaleMate : GameState -> Bool
+inStaleMate gs = not $ foldMoves moreThanOneMove False gs
+    where moreThanOneMove True  p mc = True
+          moreThanOneMove False p mc =
+            case p.tp of -- TODO: Move prevention of moving king into check upstream?
+                King -> not $ inCheckAfter gs p mc
+                _ -> True
+

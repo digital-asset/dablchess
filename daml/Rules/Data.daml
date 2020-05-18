@@ -1,0 +1,77 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Rules.Data where
+-- Types and functions more useful for manipulating the board.
+
+import DA.Next.Map as M
+
+import Types
+
+-- Some aliases for ease of use
+-- col, row [0,7]
+type IntCoord = (Int, Int)
+
+-- | Turns a `Coord` into integer coordinates with x in [0-7]
+toIntCoord : Coord -> IntCoord
+toIntCoord c = (i / 8, i % 8)
+  where i = fromEnum c
+
+toCoord : IntCoord -> Coord
+toCoord (col, row) = toEnum i
+  where i = col * 8 + row
+
+flipRow : IntCoord -> IntCoord
+flipRow (col, row) = (col, 7 - row)
+
+flipCol : IntCoord -> IntCoord
+flipCol (col, row) = (7 - col, row)
+
+colD : IntCoord -> IntCoord -> Int
+colD c1 c2 = abs(c1._1 - c2._1)
+
+rowD : IntCoord -> IntCoord -> Int
+rowD c1 c2 = abs(c1._2 - c2._2)
+
+mirror : Piece -> Piece
+mirror p = p with
+          coord = toCoord (flipRow (toIntCoord p.coord))
+          owner = Black
+
+initPieces : Side -> [Piece]
+initPieces Black =
+  map mirror (initPieces White)
+
+initPieces White =
+  let initTypes = [Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook]
+      pawns = map (\l -> Piece with
+                coord = toCoord (l, 1)
+                tp = Pawn
+                owner = White
+                moved = False)
+              [0 .. 7]
+      pieces =
+          map (\(col, tp) -> Piece with
+            coord = toCoord (col, 0)
+            tp = tp
+            owner = White
+            moved = False)
+          (zip [0..7] initTypes)
+  in
+  pawns ++ pieces
+
+toPieceMap : [Piece] -> PieceMap
+toPieceMap = M.fromList . fmap (\p -> (p.coord, p))
+
+initState () =
+  GameState with
+    side = White
+    pieces = toPieceMap $ initWhitePieces ++ initBlackPieces
+    inCheck = False
+    everCheck = EverCheck with white = False, black = False
+    moves = []
+  where
+    initWhitePieces = initPieces White
+    initBlackPieces = initPieces Black
+

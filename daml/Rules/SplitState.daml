@@ -1,0 +1,65 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Rules.SplitState where
+
+-- How do we create the split state necessary for fog of war.
+
+import Types
+import Rules.Data
+import Rules.Moves
+import DA.Next.Map qualified as M
+import DA.Optional
+
+
+splitGameStateOfSide : Side -> GameState -> SplitGameState
+splitGameStateOfSide side gs =
+  SplitGameState with
+    side = gs.side
+    pieces = M.union coordsWithMyPieces myVisibleCoords
+    inCheck_ = side == gs.side && gs.inCheck
+    everCheck = gs.everCheck
+    moves = filter (\m -> m.by == side) gs.moves
+  where myPiece (c,p) = if p.owner == side then Some (c, Some p) else None
+        coordsWithMyPieces = M.fromList $ mapOptional myPiece $ M.toList gs.pieces
+        myVisibleCoords = visibleCoords side gs
+
+mergeMoves acc (w::ws) (b::bs) = mergeMoves (b::(w::acc)) ws bs
+mergeMoves acc [w]     []      = (w :: acc) -- white may have an extra move
+mergeMoves acc []      []      = acc
+mergeMoves _   _       _       = error "More black moves than white ones!"
+
+joinGameStates : SplitGameState -> SplitGameState -> GameState
+joinGameStates ws bs =
+  if ws.side /= bs.side then
+    error "We can't disagree about who's turn it is to move"
+  else
+    GameState with
+      side = ws.side
+      pieces = M.union (mapPieces ws.pieces) (mapPieces bs.pieces)
+      inCheck = if ws.side == White then ws.inCheck_ else bs.inCheck_
+      everCheck = ws.everCheck
+      moves = mergeMoves [] (reverse ws.moves) (reverse bs.moves)
+  where justCoord (c, None)   = None
+        justCoord (c, Some p) = Some (c,p)
+        mapPieces = M.fromList . mapOptional justCoord . M.toList
+
+toSplitPieceMap : [Piece] -> SplitPieceMap
+toSplitPieceMap = M.fromList . fmap (\p -> (p.coord, Some p))
+
+-- The two rows in front of the starting positions that are visible in the beginning.
+initiallyVisibleCoords : Side -> [Coord]
+initiallyVisibleCoords White = [ A3, B3, C3, D3, E3, F3, G3, H3, A4, B4, C4, D4, E4, F4, G4, H4 ]
+initiallyVisibleCoords Black = [ A6, B6, C6, D6, E6, F6, G6, H6, A5, B5, C5, D5, E5, F5, G5, H5 ]
+
+
+initSplitState side =
+  SplitGameState with
+    side = White  -- It is always White's obligation to move first.
+    pieces = M.union initialPieces myVisibleCoords
+    inCheck_ = False
+    everCheck = EverCheck with white = False, black = False
+    moves = []
+  where initialPieces = toSplitPieceMap $ initPieces side
+        myVisibleCoords = M.fromList $ map (\c -> (c, None)) $ initiallyVisibleCoords side

@@ -1,0 +1,71 @@
+
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Alias where
+
+import DA.Text qualified as T
+import DA.Next.Map qualified as M
+import DA.Next.Set qualified as S
+
+template Aliases
+  with
+    aliasToParty : M.Map Text Party
+    partyToAlias : M.Map Party Text
+    operator : Party
+    publicParty : Party
+    members : S.Set Party
+  where
+    signatory operator
+    observer members, publicParty
+    key operator : Party
+    maintainer key
+
+    controller operator can
+      ProcessRequest : ContractId Aliases
+        with
+          requestId : ContractId AliasRequest
+        do
+          request <- fetch requestId
+          let (woPartyToAlias, woAliasToParty) =
+                case M.lookup request.user partyToAlias of
+                  None -> (partyToAlias, aliasToParty)
+                  Some oldAlias -> (M.delete request.user partyToAlias, M.delete oldAlias aliasToParty)
+          _alias <- exercise requestId Acknowledge
+          if T.isEmpty request.alias
+          then
+            do
+              create Aliases with
+                        members = S.delete request.user members
+                        aliasToParty = woAliasToParty
+                        partyToAlias = woPartyToAlias
+                        ..
+          else
+            case M.lookup request.alias woAliasToParty of
+              None ->
+                do create Aliases with
+                    members = S.insert request.user members
+                    partyToAlias = M.insert request.user request.alias woPartyToAlias
+                    aliasToParty = M.insert request.alias request.user woAliasToParty
+                    ..
+              Some v ->
+                do create Aliases with
+                      members = S.insert request.user members
+                      ..
+
+-- An Alias and an AliasRequest are the same.
+template AliasRequest
+  with
+    user : Party
+    alias : Text      -- an empty alias request can be used to remove existing ones
+    operator : Party
+  where
+    signatory user
+
+    key (operator, user) : (Party, Party)
+    maintainer key._2
+
+    controller operator can
+      Acknowledge : ()
+        do return ()

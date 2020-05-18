@@ -1,0 +1,159 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.Moves where
+
+import DA.Assert
+import DA.List
+
+import Types
+import Rules.Data
+import Rules.Moves
+import Rules.States
+
+type Pmc = (Piece,MoveOrCapture)
+
+allMoves : GameState -> [Pmc]
+allMoves = foldMoves (\acc p mc -> (p,mc) :: acc) []
+
+regularMove : MoveOrCapture -> Bool
+regularMove (Move _)  = True
+regularMove _         = False
+
+movesOfPiece : PieceType -> [Pmc] -> ([Pmc], [Pmc])
+movesOfPiece piece = partition (\(p,_) -> p.tp == piece)
+
+assertNotInCheck gameState = scenario do
+  let msg = (show gameState.side) <> " is not in check "
+  assertMsg msg (not $ inCheck gameState)
+
+assertNotInCheckMate gameState = scenario do
+  let msg = (show gameState.side) <> " is not in checkmate "
+  assertMsg msg (not $ inCheckMate gameState)
+
+nonTerminalState gameState = scenario do
+  let og = gameState with side = opposite gameState.side
+  assertMsg "Not a Stalemate" (not $ inStaleMate gameState)
+  assertNotInCheck gameState
+  assertNotInCheck og
+  assertNotInCheckMate gameState
+  assertNotInCheckMate og
+
+initialStateIsNonTerminal = nonTerminalState (initState())
+
+openingMoves side = scenario do
+
+  let initGameState = initState ()
+      moves = allMoves initGameState
+      --_ = trace (show moves) ()
+      (pawnMoves, rest) = movesOfPiece Pawn moves
+      (knightMoves, rest') = movesOfPiece Knight rest
+
+  assertMsg "In the beginning each pawn can move 2 places." (length pawnMoves == 8 * 2)
+  assertMsg "In the beginning each knight can move 2 places." (length knightMoves == 2 * 2)
+  assertMsg "And nothing else!" (null rest')
+  assertMsg "None of the moves is a capture!" (all (\(_, m) -> regularMove m ) moves)
+
+openingWhite = openingMoves White
+openingBlack = openingMoves Black
+
+advance : GameState -> ChessMove -> GameState
+advance gs mv =
+  case legal gs mv of
+    Left e -> error "We'll test via legal moves only"
+    Right ns -> ns
+
+kingsPawnMove : ChessMove
+kingsPawnMove = ChessMove with
+                  from = E2
+                  to = E4
+                  by = White
+                  promote = None
+
+kingsPawnOpening = scenario do
+
+  let initGameState = initState ()
+      kingsPawnGameState = advance initGameState kingsPawnMove
+      blackMoves = allMoves kingsPawnGameState
+      --_ = trace (show blackMoves) ()
+      (pawnMoves, rest1) = movesOfPiece Pawn blackMoves
+      (knightMoves, rest2) = movesOfPiece Knight rest1
+
+  -- situation for black doesn't change!
+  assertMsg "In the beginning each black pawn can move 2 places." (length pawnMoves == 8 * 2)
+  assertMsg "In the beginning each black knight can move 2 places." (length knightMoves == 2 * 2)
+  assertMsg "And no more black moves.!" (null rest2)
+  assertMsg "None of the black moves is a capture!" (all (\(_, m) -> regularMove m) blackMoves)
+
+  nonTerminalState kingsPawnGameState
+
+  let whiteMoves = allMoves (kingsPawnGameState with side = White)
+      --_ = trace (show whiteMoves) ()
+      (pawnMoves, rest1) = movesOfPiece Pawn whiteMoves
+      (knightMoves, rest2) = movesOfPiece Knight rest1
+      --_ = trace (show knightMoves) ()
+      (bishopMoves, rest3) = movesOfPiece Bishop rest2
+      (queenMoves, rest4) = movesOfPiece Queen rest3
+      (kingMoves, rest5) = movesOfPiece King rest4
+
+  assertMsg "After kings pawn opening, one less pawn move" (length pawnMoves == 7 * 2 + 1)
+  assertMsg "The knights have an extra move" (length knightMoves == 2 * 2 + 1)
+
+  let headBishop = fst $ head bishopMoves
+      sameBishop = foldl (\b (p,_) -> b && p == headBishop) True bishopMoves
+  assertMsg "The kings side bishop can move 5 places" (length bishopMoves == 5)
+  assertMsg "We can only move the white bishop" (sameBishop && headBishop.owner ==White)
+
+  assertMsg "The white queen has 4 moves" (length queenMoves == 4)
+  assertMsg "The king now has a move" (length kingMoves == 1)
+  assertMsg "And no more white moves" (null rest5)
+
+  assertMsg "None of the white moves is a capture!" (all (\(_, m) -> regularMove m) whiteMoves)
+
+-- setup fools mate
+blackBishopsPawnMove : ChessMove
+blackBishopsPawnMove = ChessMove with
+                          from = F7
+                          to = F6
+                          by = Black
+                          promote = None
+
+whiteQueensPawnMove : ChessMove
+whiteQueensPawnMove = ChessMove with
+                          from = D2
+                          to = D3
+                          by = White
+                          promote = None
+
+blackKnightsPawnMove : ChessMove
+blackKnightsPawnMove = ChessMove with
+                          from = G7
+                          to = G5
+                          by = Black
+                          promote = None
+
+whiteQueenToMate : ChessMove
+whiteQueenToMate = ChessMove with
+                          from = D1
+                          to = H5
+                          by = White
+                          promote = None
+
+-- Fools mate on the black side
+foolsMateScenario = scenario do
+  let initGameState = initState ()
+      m1 = advance initGameState kingsPawnMove
+  nonTerminalState m1
+  let m2 = advance m1 blackBishopsPawnMove
+  nonTerminalState m2
+  let m3 = advance m2 whiteQueensPawnMove
+  nonTerminalState m3
+  let m4 = advance m3 blackKnightsPawnMove
+  nonTerminalState m4
+  let m5 = advance m4 whiteQueenToMate
+
+  Black === m5.side
+  assertMsg "Black is in Check!" (inCheck m5)
+  assertMsg "Black is checkmated!" (inCheckMate m5)
+

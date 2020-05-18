@@ -1,0 +1,194 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.Draw where
+
+import DA.Assert
+import DA.Either
+import DA.List qualified as L
+
+import Types
+import Chess
+import Tests.Init
+
+
+activeDrawOffer passiveResponse = scenario do
+  InitData {..} <- initData
+
+  drawProposalId <- submit white do exercise activeSideOfGameId ActiveDrawProposal
+  submitMustFail white do fetch activeSideOfGameId
+  submitMustFail black do exercise passiveSideOfGameId PassiveDrawProposal
+
+  submitMustFail operator do exercise drawProposalId DeclareWinner -- NO! I only offered a draw!
+  drawRequestId <- submit operator do exercise drawProposalId ToRequest
+
+  submitMustFail white do exercise drawRequestId AcceptDrawRequest -- silly white, you can't make it into a draw!
+  submitMustFail white do exercise drawRequestId RejectDrawRequest -- silly white, you can't take it back.
+  passiveResponse white black operator operatorRole gId drawRequestId
+
+passiveAcceptance white black operator operatorRole _gId drawRequestId = scenario do
+  acceptedDrawRequestId <- submit black do exercise drawRequestId AcceptDrawRequest
+  gameResultId <- submit operator do exercise operatorRole AcknowledgeAcceptedDraw with ..
+  gameResult <- submit black do fetch gameResultId
+  Draw (PlayerDraw white) === gameResult.drawOrWinner
+
+backToInitialState white black operator gId = scenario do
+  game <- submit operator do fetch gId
+
+  -- White has a new active
+  (aId, active) <- submit white do fetchByKey @ActiveSideOfGame game
+
+  assert $ active.side == White
+  assert $ L.null active.active.moves
+
+  -- Black has a new passive
+  (pId, passive) <- submit black do
+                      game <- fetch gId
+                      fetchByKey @PassiveSideOfGame (game, Black)
+
+  assert $ passive.side == Black
+  assert $ L.null passive.passive.moves
+
+  -- can't see opposing side.
+  submitMustFail white do fetchByKey @PassiveSideOfGame (game, Black)
+  submitMustFail black do fetchByKey @ActiveSideOfGame game
+
+passiveRejection white black operator operatorRole gId drawRequestId = scenario do
+  rejectedDrawRequestId <- submit black do exercise drawRequestId RejectDrawRequest
+  submit operator do exercise operatorRole AcknowledgeRejectedDraw with ..
+  backToInitialState white black operator gId
+
+
+activeDrawOfferAccepted = activeDrawOffer passiveAcceptance
+
+activeDrawOfferRejected = activeDrawOffer passiveRejection
+
+passiveDrawOffer activeResponse = scenario do
+  InitData {..} <- initData
+
+  drawProposalId <- submit black do exercise passiveSideOfGameId PassiveDrawProposal
+  submitMustFail black do fetch passiveSideOfGameId
+  submitMustFail white do exercise activeSideOfGameId ActiveDrawProposal
+
+  submitMustFail operator do exercise drawProposalId DeclareWinner -- NO! I only offered a draw!
+  drawRequestId <- submit operator do exercise drawProposalId ToRequest
+
+  submitMustFail black do exercise drawRequestId AcceptDrawRequest -- silly black, you can't make it into a draw!
+  submitMustFail black do exercise drawRequestId RejectDrawRequest -- silly black, you can't take it back.
+  activeResponse white black operator operatorRole gId drawRequestId
+
+activeAcceptance white black operator operatorRole gId drawRequestId = scenario do
+  acceptedDrawRequestId <- submit white do exercise drawRequestId AcceptDrawRequest
+  gameResultId <- submit operator do exercise operatorRole AcknowledgeAcceptedDraw with ..
+  gameResult <- submit white do fetch gameResultId
+  Draw (PlayerDraw black) === gameResult.drawOrWinner
+
+activeRejection white black operator operatorRole gId drawRequestId = scenario do
+  rejectedDrawRequestId <- submit white do exercise drawRequestId RejectDrawRequest
+  submit operator do exercise operatorRole AcknowledgeRejectedDraw with ..
+  backToInitialState white black operator gId
+
+passiveDrawOfferAccepted = passiveDrawOffer activeAcceptance
+
+passiveDrawOfferRejected = passiveDrawOffer activeRejection
+
+
+
+claimDraw : Party -> Party -> ContractId OperatorRole -> ResultOrNextMove -> Scenario ResultOrNextMove
+claimDraw party operator operatorRole game = do
+    case game of
+      Right (aId, p) -> do
+        activeDrawClaimId <- submit party do exercise aId DrawClaim
+        submit operator do exercise operatorRole ConsiderDrawClaim with ..
+      Left _ -> abort "Shold be in play"
+
+testThreeRepeat = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  game <- claimDraw white operator operatorRole game
+  assertMsg ("Invalid attempt to claim a draw still have to active and passive.") $ isRight game
+
+  let
+    moves = [ (A2, A4)
+            , (A7, A5)
+            -- (1) Move the A column rooks forward and back.
+            , (A1, A3)
+            , (A8, A6)
+            , (A3, A1)
+            , (A6, A8)
+            -- (2)
+            , (A1, A3)
+            , (A8, A6)
+            , (A3, A1)
+            , (A6, A8)
+            -- (3)
+            , (A1, A3)
+            , (A8, A6)
+            , (A3, A1)
+            , (A6, A8)
+            ]
+    moves' = orderedCoordsToMoves white black moves
+  game <- foldl submitMove (return game) moves'
+
+  draw <- claimDraw white operator operatorRole game
+
+  gameResult <- case draw of
+    Right _ -> abort "Should be a draw"
+    Left gId -> do
+      submit white do fetch gId
+
+  assert (gameResult.drawOrWinner == Draw ThreefoldRepetition)
+
+testFiftyMove = scenario do
+  InitData {..} <- initData
+
+  let game = Right (activeSideOfGameId, passiveSideOfGameId)
+
+  game <- claimDraw white operator operatorRole game
+  assertMsg "Invalid attempt to claim a draw does not advance play" $ isRight game
+
+  let
+    moves = [ (A2, A4)
+            , (A7, A5)
+            ] ++
+            (join (replicate 11 [ (A1, A3)
+                                , (A8, A6)
+                                , (A3, A1)
+                                , (A6, A8)
+                                ])) ++
+            [ (A1, A3)
+            , (A8, A6)
+            , (A3, B3)
+            ]
+    moves' = orderedCoordsToMoves white black moves
+
+  game <- foldl submitMove (return game) moves'
+
+  draw <- claimDraw black operator operatorRole game
+--  assertMsg "Invalid attempt to claim a draw does not advance play" (game == sameGame)
+
+ -- let drawingMove =
+  --      ChessMove with
+   --       from = A6
+    --      to = A8
+     --     by = Black
+      --    promote = None
+       --   check = None
+
+--  game <- submitMove (return game) (black, drawingMove)
+
+ -- draw <- claimDraw white operator operatorRole game
+
+  gameResult <- case draw of
+    Right _ -> abort "Should be a draw"
+    Left gId -> do
+      submit white do fetch gId
+
+  --assertMsg (show gameResult) (gameResult.drawOrWinner == Draw FiftyMoveRule)
+  -- TODO: Fix this... we give priority to recognizing ThreefoldRepitition and this scenario
+  -- also violatest that rule. We need to encode a game where there is genuine lack of
+  -- advancement over 50 moves and not just repetition.
+  assert (gameResult.drawOrWinner == Draw ThreefoldRepetition)
