@@ -21,6 +21,9 @@ yarn_log := $(state_dir)/yarn.log
 
 js_bindings_dir := daml-ts
 
+.PHONE: all
+all: package
+
 ### DAML server
 .PHONY: clean stop_daml_server stop_operator stop_yarn_server
 
@@ -78,14 +81,17 @@ target_dir := target
 dar := $(target_dir)/dablchess-model-$(dar_version).dar
 bot := $(target_dir)/dablchess-bot-$(bot_version).tar.gz
 ui := $(target_dir)/dablchess-ui-$(ui_version).zip
+dabl_meta := $(target_dir)/dabl-meta.yaml
 
 $(target_dir):
 	mkdir $@
 
 .PHONY: package
-package: $(bot) $(dar) $(ui)
-	cd $(target_dir) && zip dabl-chess.zip *
-	#cd $(target_dir) && zip dabl-chess.zip * && rm dablchess*
+package: $(bot) $(dar) $(ui) $(dabl_meta)
+	cd $(target_dir) && zip dabl-chess.dit *
+
+$(dabl_meta): $(target_dir) dabl-meta.yaml
+	cp dabl-meta.yaml $@
 
 $(dar): $(target_dir) $(daml_build_log)
 	cp .daml/dist/chess-$(dar_version).dar $@
@@ -100,4 +106,4 @@ $(ui): $(target_dir) $(yarn_build_log)
 
 .PHONY: clean
 clean:
-	rm -rf $(state_dir) $(operator_bot_dir) $(js_bindings_dir) $(bot) $(dar) $(ui)
+	rm -rf $(state_dir) $(operator_bot_dir) $(js_bindings_dir) $(target_dir)
