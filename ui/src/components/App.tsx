@@ -28,7 +28,7 @@ export default function App() {
   // #######################################################################
 
   function RootRoute() {
-    var userDispatch = useUserDispatch();
+    const userDispatch = useUserDispatch();
 
     useEffect(() => {
       const url = new URL(window.location.toString());
