@@ -3,8 +3,8 @@ import Chessboard, {Piece as CPiece, Position} from "chessboardjsx";
 import { Button, ButtonGroup, Dialog, DialogTitle } from "@material-ui/core";
 import { ContractId } from "@daml/types";
 import { useLedger } from "@daml/react";
-import { ActiveSideOfGame, Move, PassiveSideOfGame } from "@daml-ts/chess-0.4.0/lib/Chess";
-import { Coord, Piece, PieceType, Side, SplitGameState } from "@daml-ts/chess-0.4.0/lib/Types";
+import { ActiveSideOfGame, Move, PassiveSideOfGame } from "@daml-ts/chess-0.4.1/lib/Chess";
+import { Coord, Piece, PieceType, Side, SplitGameState } from "@daml-ts/chess-0.4.1/lib/Types";
 import { useStyles } from "./styles";
 
 type backgroundColorStyle = {

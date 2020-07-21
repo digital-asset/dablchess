@@ -6,8 +6,8 @@ import { Autocomplete } from '@material-ui/lab';
 import { useUserState } from "../../../../context/UserContext";
 import { useWellKnownParties } from "../../../../context/WellKnownPartiesContext";
 import { useAliasMaps } from "../../../../context/AliasMapContext";
-import { GameProposal } from "@daml-ts/chess-0.4.0/lib/Chess";
-import { Side } from "@daml-ts/chess-0.4.0/lib/Types";
+import { GameProposal } from "@daml-ts/chess-0.4.1/lib/Chess";
+import { Side } from "@daml-ts/chess-0.4.1/lib/Types";
 
 type NewGameDialogProp = {
   open : boolean
