@@ -1,5 +1,4 @@
 import React from "react";
-import { CreateEvent } from "@daml/ledger";
 import { useLedger } from "@daml/react";
 import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell , TableBody } from "@material-ui/core";
 import { useStyles } from "./styles";
@@ -38,9 +37,8 @@ function side(g : Game | GameResult, party : string) : string {
   return g.proposer === party? g.desiredSide : otherSide(g.desiredSide);
 }
 
-type CreateEvent_<T extends object> = CreateEvent<T, any, any>
 type GameProposalRowProp = {
-  createGp : CreateEvent_<GameProposal>
+  createGp : GameProposal.CreateEvent
 }
 
 function GameProposalRow({createGp} : GameProposalRowProp ) {
@@ -76,7 +74,7 @@ function GameProposalRow({createGp} : GameProposalRowProp ) {
 }
 
 type ActiveSideofGameRowProp = {
-  createAs : CreateEvent_<ActiveSideOfGame>
+  createAs : ActiveSideOfGame.CreateEvent
 }
 
 function ActiveSideOfGameRow({createAs} : ActiveSideofGameRowProp) {
@@ -135,7 +133,7 @@ function ActiveSideOfGameRow({createAs} : ActiveSideofGameRowProp) {
 }
 
 type PassiveSideOfGameRowProp = {
-  createPs : CreateEvent_<PassiveSideOfGame>
+  createPs : PassiveSideOfGame.CreateEvent
 }
 
 function PassiveSideOfGameRow({createPs} : PassiveSideOfGameRowProp) {
@@ -189,7 +187,7 @@ function PassiveSideOfGameRow({createPs} : PassiveSideOfGameRowProp) {
 }
 
 type DrawRequestRowProp = {
-  createDr : CreateEvent_<DrawRequest>
+  createDr : DrawRequest.CreateEvent
 }
 
 function DrawRequestRow({createDr} : DrawRequestRowProp) {
@@ -232,7 +230,7 @@ function DrawRequestRow({createDr} : DrawRequestRowProp) {
 }
 
 type GameResultRowProp = {
-  createGr : CreateEvent_<GameResult>
+  createGr : GameResult.CreateEvent
 }
 
 function GameResultRow({createGr} : GameResultRowProp) {
@@ -286,11 +284,11 @@ function GameResultRow({createGr} : GameResultRowProp) {
 }
 
 type ContractsProp<K, I> = {
-  gameProposals : readonly CreateEvent_<GameProposal>[]
-  activeGames : readonly CreateEvent_<ActiveSideOfGame>[]
-  passiveGames : readonly CreateEvent_<PassiveSideOfGame>[]
-  drawRequests : readonly CreateEvent_<DrawRequest >[]
-  gameResults : readonly CreateEvent_<GameResult>[]
+  gameProposals : readonly GameProposal.CreateEvent[]
+  activeGames : readonly ActiveSideOfGame.CreateEvent[]
+  passiveGames : readonly PassiveSideOfGame.CreateEvent[]
+  drawRequests : readonly DrawRequest.CreateEvent[]
+  gameResults : readonly GameResult.CreateEvent[]
 }
 
 export default function Contracts({gameProposals, activeGames, passiveGames, drawRequests, gameResults} : ContractsProp<any, any>) {
