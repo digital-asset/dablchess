@@ -1,7 +1,6 @@
 import React, {useState} from "react";
 import Chessboard, {Piece as CPiece, Position} from "chessboardjsx";
 import { Button, ButtonGroup, Dialog, DialogTitle } from "@material-ui/core";
-import { ContractId } from "@daml/types";
 import { useLedger } from "@daml/react";
 import { ActiveSideOfGame, Move, PassiveSideOfGame } from "@daml-ts/chess-0.5.0/lib/Chess";
 import { Coord, Piece, PieceType, Side, SplitGameState } from "@daml-ts/chess-0.5.0/lib/Types";
@@ -51,26 +50,13 @@ function PromotePieceTypeDialog({open, setPromotion} : PromotePieceTypeDialogPro
   )
 }
 
-interface ActiveContractId {
-  kind : "active"
-  contractId : ContractId<ActiveSideOfGame>
-}
-
-interface PassiveContractId {
-  kind : "passive"
-  contractId : ContractId<PassiveSideOfGame>
-}
-
-// TODO - It would be nice to isolate this example so that ContractId,
-// CreateEvent or Template had the appropriate discrimant.
-type OurContractId = ActiveContractId | PassiveContractId
 
 type ChessBoardDialogProp = {
   open : boolean
   side : Side
   onClose : () => void
   game : SplitGameState
-  c : OurContractId
+  c : ActiveSideOfGame.CreateEvent | PassiveSideOfGame.CreateEvent
   // Active can make moves while Passive (can't ..) is only for display.
 }
 
@@ -105,8 +91,8 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
     }
   }
 
-  async function exerciseMove(contractId : ContractId<ActiveSideOfGame>, move : Move ){
-    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.Move, contractId, move);
+  async function exerciseMove(contract : ActiveSideOfGame.CreateEvent, move : Move ){
+    const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.Move, contract.contractId, move);
     console.log(`After moving ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
@@ -114,8 +100,8 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
   let onDrop : (m : moveArgs) => void;
   let allowDrag : () => boolean;
   let title : string;
-  switch(c.kind) {
-    case "active" :
+  switch(c.templateId) {
+    case ActiveSideOfGame.templateId:
       onDrop = ({sourceSquare, targetSquare, piece}) => {
         delete position[sourceSquare];
         position[targetSquare] = piece;
@@ -128,13 +114,13 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
             setOpenPromoteDialog(true);
         }
         const move : Move = { from, to, promote};
-        exerciseMove(c.contractId, move);
+        exerciseMove(c, move);
         onClose();
       }
       allowDrag = () => true;
       title = game.inCheck_ ? "In check!" : "Make your move";
       break;
-    case "passive" :
+    case PassiveSideOfGame.templateId:
       onDrop = e => {};
       allowDrag = () => false;
       title = game.inCheck_ ? "Check!" : "Waiting for your turn";

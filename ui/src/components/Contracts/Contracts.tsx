@@ -114,7 +114,7 @@ function ActiveSideOfGameRow({createAs} : ActiveSideofGameRowProp) {
 
   return (
     <>
-      <ChessBoardDialog open={openChessBoard} side={ap.side} onClose={handleClose} game={ap.active} c={{kind:"active", contractId:createAs.contractId}} />
+      <ChessBoardDialog open={openChessBoard} side={ap.side} onClose={handleClose} game={ap.active} c={createAs} />
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{ap.game.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{ap.side}</TableCell>
@@ -169,7 +169,7 @@ function PassiveSideOfGameRow({createPs} : PassiveSideOfGameRowProp) {
   const opponent_ = opponent(pp.game, pp.player); // Ideally this should be userState.party, but we'll save a React state.
   return (
     <>
-      <ChessBoardDialog open={openChessBoard} side={pp.side} onClose={handleClose} game={pp.passive} c={{kind:"passive", contractId:createPs.contractId}} />
+      <ChessBoardDialog open={openChessBoard} side={pp.side} onClose={handleClose} game={pp.passive} c={createPs} />
       <TableRow className={classes.tableRow} onClick={onClick}>
         <TableCell className={classes.tableCell}>{pp.game.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{side(pp.game, pp.player)}</TableCell>
