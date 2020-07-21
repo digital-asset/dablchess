@@ -9,16 +9,16 @@ import { isLocalDev } from "../../config";
 
 
 function Login({history}:RouteComponentProps<any>) {
-  var classes = useStyles();
+  const classes = useStyles();
 
   // global
-  var userDispatch = useUserDispatch();
+  const userDispatch = useUserDispatch();
 
   // local
-  var [isLoading, setIsLoading] = useState<boolean>(false);
-  var [error, setError] = useState(false);
-  var [loginValue, setLoginValue] = useState<string>("");
-  var [passwordValue, setPasswordValue] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState(false);
+  const [loginValue, setLoginValue] = useState<string>("");
+  const [passwordValue, setPasswordValue] = useState<string>("");
 
   return (
     <Grid container className={classes.container}>

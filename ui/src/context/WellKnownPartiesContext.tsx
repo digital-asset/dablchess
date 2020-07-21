@@ -27,7 +27,7 @@ export async function getWellKnownParties() : Promise<WellKnownParties> {
   }
 }
 
-var WellKnownPartiesContext = React.createContext<WellKnownParties>(emptyWellKnownParties);
+const WellKnownPartiesContext = React.createContext<WellKnownParties>(emptyWellKnownParties);
 
 function WellKnownPartiesProvider({children}:{children:React.ReactNode}){
   const [wellKnownParties, setWKP] = useState(emptyWellKnownParties);
@@ -47,7 +47,7 @@ function WellKnownPartiesProvider({children}:{children:React.ReactNode}){
 }
 
 function useWellKnownParties(){
-  var context = React.useContext(WellKnownPartiesContext);
+  const context = React.useContext(WellKnownPartiesContext);
   if(context === undefined){
     throw new Error("useWellKnownParties must be withink WellKnownPartiesContext Provider");
   }

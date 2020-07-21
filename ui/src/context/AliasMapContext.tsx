@@ -27,7 +27,7 @@ class AliasMap{
              , public toParty : (alias:string) => string){}
 }
 
-var AliasMapContext = React.createContext(new AliasMap({},{},(_)=>"",(_)=>""));
+const AliasMapContext = React.createContext(new AliasMap({},{},(_)=>"",(_)=>""));
 
 function AliasMapProvider({children}:{children:React.ReactNode}) {
 
@@ -87,7 +87,7 @@ function AliasMapProvider({children}:{children:React.ReactNode}) {
 }
 
 function useAliasMaps() : AliasMap {
-  var context = React.useContext(AliasMapContext);
+  const context = React.useContext(AliasMapContext);
   if (context === undefined) {
     throw new Error("useAliasMaps must be used within a UserProvider");
   }
