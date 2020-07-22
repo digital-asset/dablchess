@@ -1,4 +1,3 @@
-import uuidv4 from "uuid/v4";
 import * as jwt from "jsonwebtoken";
 
 export const isLocalDev : boolean = process.env.NODE_ENV === 'development';
@@ -46,3 +45,5 @@ console.log(`Config:
 
 export const daml_party_key = applicationId + ".daml.party";
 export const daml_token_key = applicationId + ".daml.token";
+
+export const defaultPublicToken = isLocalDev ? createToken('Public') : undefined;
