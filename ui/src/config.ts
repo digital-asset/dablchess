@@ -5,7 +5,8 @@ export const isLocalDev : boolean = process.env.NODE_ENV === 'development';
 
 let host : string[] = window.location.host.split('.')
 
-export const ledgerId : string = isLocalDev ? "dablchess" : host[0];
+const applicationId = "dablchess"
+export const ledgerId : string = isLocalDev ? applicationId : host[0];
 
 let apiUrl : string[] = host.slice(1)
 apiUrl.unshift('api')
@@ -17,8 +18,6 @@ export const httpBaseUrl : string | undefined = isLocalDev ? undefined : ('https
 // websockets properly. Thus, we need to bypass it and talk to the JSON API
 // directly in development mode.
 export const wsBaseUrl : string | undefined = isLocalDev ? 'ws://localhost:7575/' : undefined;
-
-const applicationId : string = uuidv4();
 
 export function createToken(party : string) {
   return jwt.sign({ "https://daml.com/ledger-api": { ledgerId, applicationId, admin: true, actAs: [party], readAs: [party] } }, "secret")
@@ -44,3 +43,6 @@ console.log(`Config:
   wellKnownUrl ${wellKnownUrl}
   publicTokenUrl ${publicTokenUrl}
 `);
+
+export const damlPartyKey = applicationId + ".daml.party";
+export const damlTokenKey = applicationId + ".daml.token";
