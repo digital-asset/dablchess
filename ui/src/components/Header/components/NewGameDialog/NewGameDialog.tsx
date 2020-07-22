@@ -4,7 +4,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl,
        , Radio, RadioGroup, TextField, } from '@material-ui/core';
 import { Autocomplete } from '@material-ui/lab';
 import { useUserState } from "../../../../context/UserContext";
-import { useWellKnownParties } from "../../../../context/WellKnownPartiesContext";
+import { useWellKnownParties } from "@daml/dabl-react";
 import { useAliasMaps } from "../../../../context/AliasMapContext";
 import { GameProposal } from "@daml-ts/chess-0.5.0/lib/Chess";
 import { Side } from "@daml-ts/chess-0.5.0/lib/Types";

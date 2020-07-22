@@ -1,4 +1,3 @@
-import uuidv4 from "uuid/v4";
 import * as jwt from "jsonwebtoken";
 
 export const isLocalDev : boolean = process.env.NODE_ENV === 'development';

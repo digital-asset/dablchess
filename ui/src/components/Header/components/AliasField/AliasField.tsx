@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import { TextField } from "@material-ui/core";
 import { useLedger } from "@daml/react";
 import { useUserState } from "../../../../context/UserContext";
-import { useWellKnownParties } from "../../../../context/WellKnownPartiesContext";
+import { useWellKnownParties } from "@daml/dabl-react";
 import { useAliasMaps } from "../../../../context/AliasMapContext";
 import useStyles from "./styles";
 import { AliasRequest } from "@daml-ts/chess-0.5.0/lib/Alias";
