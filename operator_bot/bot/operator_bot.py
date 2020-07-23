@@ -26,10 +26,11 @@ class ALIAS:
 def main():
     url = os.getenv('DAML_LEDGER_URL')
     ref = os.getenv('DAML_LEDGER_PARTY')
-    pub = os.getenv('DABL_PUBLIC_PARTY')
+    operator_party = "UserAdmin" if not ref else ref
 
-    operator_party = "Ref" if not ref else ref
-    public_party = "Ref" if not pub else pub
+    # We do not use this party in the Operator
+    #pub = os.getenv('DABL_PUBLIC_PARTY')
+    #public_party = "Public" if not pub else pub
 
     network = dazl.Network()
     network.set_config(url=url)

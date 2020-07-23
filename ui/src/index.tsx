@@ -18,7 +18,7 @@ const WrapPublicLedger : React.FC = ({children}) => {
   )
 }
 
-const defaultWkp = isLocalDev ? {userAdminParty:"Ref", publicParty:"Ref"} : undefined;
+const defaultWkp = isLocalDev ? {userAdminParty:"UserAdmin", publicParty:"Public"} : undefined;
 
 ReactDOM.render(
   <WellKnownPartiesProvider defaultWkp={defaultWkp}>
