@@ -6,7 +6,7 @@ init-script: InitScript:setup
 parties:
 - Alice
 - Bob
-- Ref
+- UserAdmin
 sandbox-options:
   - --ledgerid=dablchess
   - -w
