@@ -2,56 +2,45 @@ import React, {useState} from 'react';
 import { useLedger } from "@daml/react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, FormLabel
        , Radio, RadioGroup, TextField, } from '@material-ui/core';
-import { Autocomplete } from '@material-ui/lab';
 import { useUserState } from "../../../../context/UserContext";
 import { useWellKnownParties } from "@daml/dabl-react";
-import { useAliasMaps } from "../../../../context/AliasMapContext";
 import { GameProposal } from "@daml-ts/chess-0.5.0/lib/Chess";
 import { Side } from "@daml-ts/chess-0.5.0/lib/Types";
+import AliasedTextField from '../../../AliasedTextField/AliasedTextField';
 
 type NewGameDialogProp = {
   open : boolean
   handleClose : () => void
 }
 
-class AutocompleteOption {
-  constructor(public alias: string, public party: string){}
-}
-
 export default function NewGameDialog({open, handleClose} : NewGameDialogProp) {
 
   const wellKnownParties = useWellKnownParties();
   const [gameId, setGameId] = useState<string>("");
-  const [opponentField, setOpponentField] = useState<string>("");
+  const [opponent, setOpponent] = useState<string|null>(null);
   const [side, setSide] = useState<Side>(Side.White);
   const ledger = useLedger();
-  const aliasMap = useAliasMaps();
   const user = useUserState();
 
   if(!user.isAuthenticated){
     return null;
   }
-  const proposer = user.party;
 
-  const aliasesAsArray : AutocompleteOption[] =
-    Object.entries(aliasMap.aliasToParty)
-          .map(([alias, party]) => new AutocompleteOption(alias, (party as string)));
+  const proposer = user.party;
   async function proposeGame(args: GameProposal){
     try {
       let gameProposalPromise = await ledger.create(GameProposal, args);
       console.log("We created a game: " + JSON.stringify(gameProposalPromise));
     } catch(error) {
-      alert("Error creating a gameProposal" + error + " " + JSON.stringify(args));
+      alert(`Error creating a gameProposal ${JSON.stringify(error)} - ${JSON.stringify(args)}`);
     }
   }
 
   function onClose(proposed:boolean){
-    // User actually submitted the request.
-    if(proposed && !!gameId && !!opponentField){
-      let opponent = aliasMap.toParty(opponentField);
+    if(proposed && !!gameId && !!opponent){
       let gameProposalArgs =  { gameId
                               , proposer
-                              , opponent:opponent
+                              , opponent
                               , operator:wellKnownParties.userAdminParty
                               , desiredSide:side
                               };
@@ -59,12 +48,6 @@ export default function NewGameDialog({open, handleClose} : NewGameDialogProp) {
       proposeGame(gameProposalArgs);
     }
     handleClose()
-  }
-  function handleChangeAutocompleteTextField(event : React.ChangeEvent<HTMLInputElement>){
-    setOpponentField(event.target.value)
-  }
-  function handleGetOptionLabel(option:any):string{
-    return option instanceof AutocompleteOption? option.alias : String(option);
   }
   return (
     <div>
@@ -80,23 +63,13 @@ export default function NewGameDialog({open, handleClose} : NewGameDialogProp) {
             fullWidth
             onChange={e => setGameId(e.target.value)}
           />
-          <Autocomplete
-            id="opponent-autocomplete"
-            //autoComplete={true}
-            options={aliasesAsArray}
-            getOptionLabel={handleGetOptionLabel}
-            // Allow the user to request games against arbitrary players.
-            freeSolo
-            disableClearable
-            renderInput={(params) => <TextField
-                                        {...params}
-                                        margin="dense"
-                                        id="opponent"
-                                        placeholder="Who do you want to play against?"
-                                        label="Opponent"
-                                        fullWidth
-                                        onChange={handleChangeAutocompleteTextField}
-                                        /> }
+          <AliasedTextField
+            placeholder="opponent"
+            onChange={(arg1) =>{
+              if(arg1 !== null){
+                setOpponent(arg1)
+              }
+            }}
           />
           <FormControl component="fieldset"  >
             <FormLabel component="legend">Desired Side</FormLabel>

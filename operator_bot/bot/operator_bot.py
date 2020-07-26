@@ -19,9 +19,10 @@ class CHESS:
     AcceptedDrawRequest = 'Chess:AcceptedDrawRequest'
     RejectedDrawRequest = 'Chess:RejectedDrawRequest'
 
-class ALIAS:
-    Aliases = 'Alias:Aliases'
-    AliasRequest = 'Alias:AliasRequest'
+class User:
+    SessionRequest = 'User:SessionRequest'
+    SessionRenameRequest = 'User:SessionRenameRequest'
+
 
 def main():
     url = os.getenv('DAML_LEDGER_URL')
@@ -106,32 +107,16 @@ def main():
         (orId, _operatorRoleParams) = res.popitem()
         return client.submit_exercise(orId, 'AcknowledgeRejectedDraw', {'rejectedDrawRequestId':event.cid})
 
-    # Support for aliases
-    @client.ledger_ready()
-    def create_aliases(event): # pylint: disable=unused-variable
-        logging.info(f'Make sure we have an aliases contract: {event}')
-        res = client.find_active(ALIAS.Aliases, {'operator':operator_party})
-        if not res:
-            aliasArgs = { 'aliasToParty' : { 'textMap' : {} }
-                        , 'partyToAlias' : { 'textMap' : {} }
-                        , 'operator' : client.party
-                        , 'publicParty' : public_party
-                        , 'members' : { 'textMap' : {} }
-                        }
-            logging.info(f'Creating an aliases with {aliasArgs}')
-            return client.submit_create( ALIAS.Aliases, aliasArgs)
-        else:
-            logging.info(f'We have an aliases contract')
+    # Support for sessions.
+    @client.ledger_created(User.SessionRequest)
+    def process_request(event): # pylint: disable=unused-variable
+        logging.info(f'A client has logged in: {event}.')
+        return client.submit_exercise( event.cid, 'Acknowledge', {})
 
-    @client.ledger_created(ALIAS.AliasRequest)
-    def acknowledge_alias_request(event): # pylint: disable=unused-variable
-        logging.info(f'An alias request: {event}')
-
-        res = client.find_active(ALIAS.Aliases, {'operator':operator_party})
-        logging.info(f'aliasMapC {res}')
-        assert len(res) == 1
-        (aliasMapId, _aliasMapParams) = res.popitem()
-        return client.submit_exercise(aliasMapId, 'ProcessRequest', {'requestId':event.cid})
+    @client.ledger_created(User.SessionRenameRequest)
+    def process_rename(event): # pylint: disable=unused-variable
+        logging.info(f'A client requests a rename: {event}.')
+        return client.submit_exercise( event.cid, 'AcknowledgeRename', {})
 
     network.run_forever()
 

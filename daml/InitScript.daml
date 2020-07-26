@@ -12,7 +12,7 @@ setup : Script ()
 setup = do
   alice <- allocatePartyWithHint "Alice" $ PartyIdHint with partyIdHint = "Alice"
   bob <- allocatePartyWithHint "Bob" $ PartyIdHint with partyIdHint = "Bob"
-  ref <- allocatePartyWithHint "Ref" $ PartyIdHint with partyIdHint = "Ref"
+  ref <- allocatePartyWithHint "UserAdmin" $ PartyIdHint with partyIdHint = "UserAdmin"
 
   submit alice do createCmd GameProposal with
                     gameId = "Game 1"

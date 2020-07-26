@@ -11,7 +11,7 @@ sandbox-options:
   - --ledgerid=dablchess
   - -w
 exposed-modules:
-- Alias
+- User
 - Chess 
 - Types
 dependencies:

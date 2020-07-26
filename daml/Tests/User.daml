@@ -1,0 +1,66 @@
+-- Copyright (c) 2020 Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
+daml 1.2
+module Tests.User where
+
+import User
+
+testNextAvailable = scenario do
+  assert $ nextAvailable "" == "1"
+  assert $ nextAvailable "1" == "2"
+  assert $ nextAvailable "9" == "10"
+
+  assert $ nextAvailable "bob" == "bob1"
+  assert $ nextAvailable "bob1" == "bob2"
+  assert $ nextAvailable "bob9" == "bob10"
+
+testRequestsAndAliases = scenario do
+  alice <- getParty "alice"
+  bob <- getParty "bob"
+  admin <- getParty "admin"
+  public <- getParty "public"
+
+  let alicesDesiredUserName = "Alice"
+  alicesReq <- submit alice do
+                  create SessionRequest with
+                    common = Common with user = alice, userName = alicesDesiredUserName, ..
+
+  alicesSessionId <- submit admin do exercise alicesReq Acknowledge
+  alicesSession <- submit alice do fetch alicesSessionId
+  assert $ alicesSession.common.userName == alicesDesiredUserName
+
+  bobsReq <- submit bob do
+                  create SessionRequest with
+                    -- tries to use the same userName
+                    common = Common with user = bob, userName = alicesDesiredUserName, ..
+
+  bobsSessionId <- submit admin do exercise bobsReq Acknowledge
+  bobsSession <- submit bob do fetch bobsSessionId
+  assert $ bobsSession.common.userName /= alicesDesiredUserName
+
+  (_aId, alicesUserName) <- submit public do fetchByKey @UserName (admin, alicesDesiredUserName)
+  assert $ alicesUserName.common.user == alice
+
+  let bobsNewName = "Bobby"
+  bobsRename <- submit bob do
+                  exercise bobsSessionId Rename with
+                    newUserName = bobsNewName
+
+  bobsSessionId <- submit admin do exercise bobsRename AcknowledgeRename
+
+  (_bId, bobsUserName) <- submit public do fetchByKey @UserName (admin, bobsNewName)
+  assert $ bobsUserName.common.user == bob
+
+  let bobsSecondName = "Rober"
+  bobsRename <- submit bob do
+                  exercise bobsSessionId Rename with
+                    newUserName = bobsSecondName
+
+  bobsSessionId <- submit admin do exercise bobsRename AcknowledgeRename
+  bobsSession <- submit bob do fetch bobsSessionId
+
+  (_bId, bobsUserName) <- submit public do fetchByKey @UserName (admin, bobsSecondName)
+  assert $ bobsUserName.common.user == bob
+
+  return ()

@@ -21,6 +21,16 @@ export const wsBaseUrl : string | undefined = isLocalDev ? 'ws://localhost:7575/
 export function createToken(party : string) {
   return jwt.sign({ "https://daml.com/ledger-api": { ledgerId, applicationId, admin: true, actAs: [party], readAs: [party] } }, "secret")
 }
+// For local development
+export function partyNameFromLocalJwtToken(token:string){
+  let decoded = jwt.decode(token);
+  if(!decoded || typeof(decoded) === "string"){
+    console.log(`local jwt not correctly format ${token}`);
+    return "";
+  } else {
+    return decoded["https://daml.com/ledger-api"]["actAs"][0];
+  }
+}
 
 let loginUrl : string[] = host.slice(1)
 loginUrl.unshift('login')
@@ -45,3 +55,6 @@ console.log(`Config:
 
 export const damlPartyKey = applicationId + ".daml.party";
 export const damlTokenKey = applicationId + ".daml.token";
+
+export const defaultPublicToken = isLocalDev ? createToken('Public') : undefined;
+
