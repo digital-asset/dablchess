@@ -1,0 +1,108 @@
+daml 1.2
+
+module User where
+
+-- Simple Party -> to UserName capabilities
+
+import qualified DA.Text as T
+import qualified DA.Next.Map as M
+
+{-
+  Helper Functions
+-}
+type UserNameMap = M.Map Text Party
+
+nextAvailable : Text -> Text
+nextAvailable s =
+  let rightNumbers = T.takeWhileEnd T.isDigit s
+      leftLetters = T.take (T.length s - T.length rightNumbers) s
+  in
+  case T.parseInt rightNumbers of
+    None    -> leftLetters <> "1"
+    Some n  -> leftLetters <> show (n + 1)
+
+data Common = Common with
+  admin : Party
+  public : Party
+  user : Party
+  userName : Text
+    deriving (Eq, Show)
+
+freeUserName : Common -> Update (ContractId Session)
+freeUserName common = do
+  userNameOpt <- lookupByKey @UserName (common.admin, common.userName)
+  case userNameOpt of
+    None -> do
+      userNameId <- create UserName with common
+      create Session with common, ..
+    Some _userNameId -> do
+      freeUserName (common with userName = nextAvailable common.userName)
+
+nextAvailableSession : Common -> Update (ContractId Session)
+nextAvailableSession common = do
+  currentSessionOpt <- lookupByKey @Session (common.admin, common.user)
+  case currentSessionOpt of
+    Some sessionId -> do return sessionId    -- No renames by creating new Session Requests!
+    None -> do freeUserName common
+
+{-
+  Templates that describes the interaction.
+-}
+
+template Session
+  with
+    common : Common
+    userNameId : ContractId UserName
+  where
+    signatory common.admin, common.user
+
+    key (common.admin, common.user) : (Party, Party)
+    maintainer key._1
+
+    controller common.user can
+      Rename : ContractId SessionRenameRequest
+        with
+          newUserName : Text
+        do
+          assert $ newUserName /= common.userName
+          archive userNameId
+          create SessionRenameRequest with
+                    common = common with userName = newUserName
+
+-- A user needs to request a Session via this contract.
+template SessionRequest
+  with
+    common : Common
+  where
+    signatory common.user
+    key common.user : Party
+    maintainer key
+
+    controller common.admin can
+      Acknowledge : ContractId Session
+        do
+          nextAvailableSession common
+
+-- A user can only ask for a rename if they already have a session.
+template SessionRenameRequest
+  with
+    common : Common
+  where
+    signatory common.user, common.admin           -- A user can't create this request
+    key common.user : Party
+    maintainer key
+
+    controller common.admin can
+      AcknowledgeRename : ContractId Session
+        do
+          nextAvailableSession common
+
+{- Username assignments maintained by the admin but visible to all users via public party. -}
+template UserName
+  with
+    common : Common
+  where
+    signatory common.admin
+    observer common.public
+    key (common.admin, common.userName) : (Party, Text)
+    maintainer key._1

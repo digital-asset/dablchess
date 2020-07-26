@@ -4,6 +4,7 @@ import { AppBar, Button, IconButton, Toolbar, Typography } from "@material-ui/co
 import { ExitToApp, Refresh } from "@material-ui/icons";
 import useStyles from "./styles";
 import { useUserDispatch, useUserState, signOut } from "../../context/UserContext";
+import { useSessionState } from "../../context/SessionContext";
 import AliasField from "./components/AliasField/AliasField";
 import NewGameDialog from "./components/NewGameDialog/NewGameDialog";
 import { useReload } from "@daml/react";
@@ -32,6 +33,7 @@ function Header({ history }: RouteComponentProps<any>) {
   const userState = useUserState();
   const userDispatch = useUserDispatch();
   const reload = useReload();
+  const sessionState = useSessionState();
   const [newGameDialogOpen, setOpenNewGameDialog] = React.useState<boolean>(false);
   if(!userState.isAuthenticated){
     return null;
@@ -46,10 +48,13 @@ function Header({ history }: RouteComponentProps<any>) {
         <NewGameButton text="New Game" onClick={()=>setOpenNewGameDialog(true)} />
         <NewGameDialog open={newGameDialogOpen} handleClose={()=>setOpenNewGameDialog(false)}/>
         <div className={classes.grow} />
-        <AliasField />
         <Typography variant="h6" >
           User: {userState.party}       {/* Do not set this one to an Alias */}
         </Typography>
+        { sessionState.type === "With"
+        ? <AliasField session={sessionState.session} />
+        : null
+        }
         <IconButton
           color="inherit"
           aria-haspopup="true"
@@ -65,7 +70,7 @@ function Header({ history }: RouteComponentProps<any>) {
           aria-controls="profile-menu"
           onClick={(event) => signOut(event, userDispatch, history)}
         >
-          <ExitToApp classes={{ root: classes.headerIcon }} />
+        <ExitToApp classes={{ root: classes.headerIcon }} />
         </IconButton>
       </Toolbar>
     </AppBar>

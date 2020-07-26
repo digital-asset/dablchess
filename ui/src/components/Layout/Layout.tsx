@@ -6,7 +6,8 @@ import Header from "../Header/Header";
 import GamesTable from "../../pages/games-table/GamesTable";
 import DamlLedger from "@daml/react";
 import { useUserState } from "../../context/UserContext";
-import { AliasMapProvider } from "../../context/AliasMapContext";
+import { SessionProvider } from "../../context/SessionContext";
+import { AliasesContextProvider } from "../../context/AliasesContext";
 import { wsBaseUrl, httpBaseUrl } from "../../config";
 
 function Layout() {
@@ -14,25 +15,27 @@ function Layout() {
   const user = useUserState();
   if(!user.isAuthenticated){
     return null;
-  }
-
-  return (
-    <DamlLedger party={user.party} token={user.token} httpBaseUrl={httpBaseUrl} wsBaseUrl={wsBaseUrl} >
-      <AliasMapProvider>
-        <div className={classes.root}>
-          <>
-            <Header/>
-            <div className={classnames(classes.content, { [classes.contentShift]: false })} >
-              <div className={classes.fakeToolbar} />
-              <Switch>
-                <Route path="/app/games-table" component={GamesTable} />
-              </Switch>
+  } else {
+    return (
+      <DamlLedger party={user.party} token={user.token} httpBaseUrl={httpBaseUrl} wsBaseUrl={wsBaseUrl} >
+        <SessionProvider>
+          <AliasesContextProvider>
+            <div className={classes.root}>
+              <>
+                <Header/>
+                <div className={classnames(classes.content, { [classes.contentShift]: false })} >
+                  <div className={classes.fakeToolbar} />
+                  <Switch>
+                    <Route path="/app/games-table" component={GamesTable} />
+                  </Switch>
+                </div>
+              </>
             </div>
-          </>
-        </div>
-      </AliasMapProvider>
-    </DamlLedger>
-  );
+          </AliasesContextProvider>
+        </SessionProvider>
+      </DamlLedger>
+    );
+  }
 }
 
 export default withRouter(Layout);

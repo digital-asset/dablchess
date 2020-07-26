@@ -5,7 +5,7 @@ import { useStyles } from "./styles";
 import { ActiveSideOfGame, DrawRequest, Game, GameProposal, PassiveSideOfGame, GameResult } from "@daml-ts/chess-0.4.1/lib/Chess";
 import { Side } from "@daml-ts/chess-0.4.1/lib/Types";
 import { useUserState } from "../../context/UserContext";
-import { useAliasMaps } from "../../context/AliasMapContext";
+import { useIdentify } from "../../context/AliasesContext";
 import ChessBoardDialog from "./components/ChessBoardDialog/ChessBoardDialog";
 
 type MyButtonProp = {
@@ -42,12 +42,13 @@ type GameProposalRowProp = {
 }
 
 function GameProposalRow({createGp} : GameProposalRowProp ) {
+
+  const identify = useIdentify();
   console.log(`Converting a gameProposal ${createGp.contractId}.`);
   let gp = createGp.payload;
 
   const classes = useStyles();
   const ledger = useLedger();
-  const aliasMap = useAliasMaps();
   const userState = useUserState();
   if(!userState.isAuthenticated){
     return null;
@@ -62,12 +63,12 @@ function GameProposalRow({createGp} : GameProposalRowProp ) {
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{gp.desiredSide}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias( userState.party === gp.opponent ? gp.proposer : gp.opponent)}</TableCell>
+        <TableCell className={classes.tableCell}>{identify(userState.party === gp.opponent ? gp.proposer : gp.opponent)}</TableCell>
         { userState.party === gp.opponent
         ? (<TableCell className={classes.tableCell}>
             <MyButton text="Accept" onClick={acceptGameProposal} />
           </TableCell>)
-        : (<TableCell className={classes.tableCell}>Waiting for {aliasMap.toAlias(gp.opponent)} to accept game request.</TableCell>)
+        : (<TableCell className={classes.tableCell}>Waiting for {identify(gp.opponent)} to accept game request.</TableCell>)
         }
       </TableRow>
   );
@@ -83,7 +84,7 @@ function ActiveSideOfGameRow({createAs} : ActiveSideofGameRowProp) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const aliasMap = useAliasMaps();
+  const identify = useIdentify();
   const [openChessBoard, setOpenChessBoard] = React.useState(false);
 
   function handleClose() {
@@ -118,7 +119,7 @@ function ActiveSideOfGameRow({createAs} : ActiveSideofGameRowProp) {
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{ap.game.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{ap.side}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent(ap.game, ap.player))}</TableCell>
+        <TableCell className={classes.tableCell}>{identify(opponent(ap.game, ap.player))}</TableCell>
         <TableCell className={classes.tableCell}>
           <ButtonGroup>
             <MyButton text="Move" onClick={move}/>
@@ -142,7 +143,7 @@ function PassiveSideOfGameRow({createPs} : PassiveSideOfGameRowProp) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const aliasMap = useAliasMaps();
+  const identify = useIdentify();
 
   async function requestDraw(){
     console.log("requesting a draw, passive" + createPs.contractId);
@@ -173,9 +174,9 @@ function PassiveSideOfGameRow({createPs} : PassiveSideOfGameRowProp) {
       <TableRow className={classes.tableRow} onClick={onClick}>
         <TableCell className={classes.tableCell}>{pp.game.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{side(pp.game, pp.player)}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent_)}</TableCell>
+        <TableCell className={classes.tableCell}>{identify(opponent_)}</TableCell>
         <TableCell className={classes.tableCell}>
-          Waiting for {aliasMap.toAlias(opponent_)}'s move.
+          Waiting for {identify(opponent_)}'s move.
           <ButtonGroup>
             <MyButton text="Request Draw" onClick={requestDraw} />
             <MyButton text="Surrender" onClick={surrender} />
@@ -196,7 +197,8 @@ function DrawRequestRow({createDr} : DrawRequestRowProp) {
 
   const classes = useStyles();
   const ledger = useLedger();
-  const aliasMap = useAliasMaps();
+  const identify = useIdentify();
+
   const userState = useUserState();
   if(!userState.isAuthenticated){
     return null;
@@ -214,11 +216,11 @@ function DrawRequestRow({createDr} : DrawRequestRowProp) {
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{dp.game.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{side(dp.game, userState.party)}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent_)}</TableCell>
+        <TableCell className={classes.tableCell}>{identify(opponent_)}</TableCell>
         { userState.party === dp.player       // Who made this draw request
         ? (<TableCell className={classes.tableCell}>You requested a draw.</TableCell>)
         : (<TableCell className={classes.tableCell}>
-            {aliasMap.toAlias(dp.player)} requested a draw:
+            {identify(dp.player)} requested a draw:
             <ButtonGroup>
               <MyButton text="Accept" onClick={accept} />
             </ButtonGroup>
@@ -238,7 +240,7 @@ function GameResultRow({createGr} : GameResultRowProp) {
 
   const classes = useStyles();
   const userState = useUserState();
-  const aliasMap = useAliasMaps();
+  const identify = useIdentify();
   if(!userState.isAuthenticated){
     return null;
   }
@@ -248,7 +250,7 @@ function GameResultRow({createGr} : GameResultRowProp) {
 
   switch(gp.drawOrWinner.tag){
     case "Winner":
-      gameState = gp.drawOrWinner.value + " won!";
+      gameState = identify(gp.drawOrWinner.value) + " won!";
       break;
     case "Draw":
       switch(gp.drawOrWinner.value.tag){
@@ -257,7 +259,7 @@ function GameResultRow({createGr} : GameResultRowProp) {
           if(drawRequester === userState.party){
             gameState = "Your draw was accepted.";
           } else{
-            gameState = `You accepted ${drawRequester}'s draw offer`;
+            gameState = `You accepted ${identify(drawRequester)}'s draw offer`;
           }
           break;
         case "Stalemate":
@@ -277,7 +279,7 @@ function GameResultRow({createGr} : GameResultRowProp) {
       <TableRow className={classes.tableRow}>
         <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
         <TableCell className={classes.tableCell}>{side(gp, userState.party)}</TableCell>
-        <TableCell className={classes.tableCell}>{gp.opponent === userState.party ? aliasMap.toAlias(gp.proposer) : aliasMap.toAlias(gp.opponent)}</TableCell>
+        <TableCell className={classes.tableCell}>{identify(gp.opponent === userState.party ? gp.proposer : gp.opponent)}</TableCell>
         <TableCell className={classes.tableCell}>{gameState}</TableCell>
       </TableRow>
   );
