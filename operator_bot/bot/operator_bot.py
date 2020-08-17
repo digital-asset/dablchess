@@ -10,18 +10,18 @@ dazl.setup_default_logger(logging.INFO)
 
 
 class CHESS:
-    GameAccept = 'Chess.GameAccept'
-    Game = 'Chess.Game'
-    OperatorRole = 'Chess.OperatorRole'
-    ActiveMove = 'Chess.ActiveMove'
-    ActiveDrawClaim = 'Chess.ActiveDrawClaim'
-    EndGameProposal = 'Chess.EndGameProposal'
-    AcceptedDrawRequest = 'Chess.AcceptedDrawRequest'
-    RejectedDrawRequest = 'Chess.RejectedDrawRequest'
+    GameAccept = 'Chess:GameAccept'
+    Game = 'Chess:Game'
+    OperatorRole = 'Chess:OperatorRole'
+    ActiveMove = 'Chess:ActiveMove'
+    ActiveDrawClaim = 'Chess:ActiveDrawClaim'
+    EndGameProposal = 'Chess:EndGameProposal'
+    AcceptedDrawRequest = 'Chess:AcceptedDrawRequest'
+    RejectedDrawRequest = 'Chess:RejectedDrawRequest'
 
 class ALIAS:
-    Aliases = 'Alias.Aliases'
-    AliasRequest = 'Alias.AliasRequest'
+    Aliases = 'Alias:Aliases'
+    AliasRequest = 'Alias:AliasRequest'
 
 def main():
     url = os.getenv('DAML_LEDGER_URL')

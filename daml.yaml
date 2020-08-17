@@ -1,6 +1,6 @@
-sdk-version: 1.0.0
+sdk-version: 1.4.0
 name: chess
-version: 0.4.0
+version: 0.5.0
 source: daml
 init-script: InitScript:setup
 parties:
@@ -11,6 +11,9 @@ sandbox-options:
   - --ledgerid=dablchess
   - -w
 exposed-modules:
+- Alias
+- Chess 
+- Types
 dependencies:
 - daml-prim
 - daml-stdlib
