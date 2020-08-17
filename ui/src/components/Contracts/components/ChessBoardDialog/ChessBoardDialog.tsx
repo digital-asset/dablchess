@@ -119,8 +119,8 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
       onDrop = ({sourceSquare, targetSquare, piece}) => {
         delete position[sourceSquare];
         position[targetSquare] = piece;
-        const from = Coord.decoder().runWithException(sourceSquare.toUpperCase());
-        const to = Coord.decoder().runWithException(targetSquare.toUpperCase());
+        const from = Coord.decoder.runWithException(sourceSquare.toUpperCase());
+        const to = Coord.decoder.runWithException(targetSquare.toUpperCase());
         const lastRow = parseInt(targetSquare[1], 10);
         if( (piece === "wP" && lastRow === 8 && game.side === Side.White)
           || (piece === "bP" && lastRow === 1 && game.side === Side.Black) ){
