@@ -6,6 +6,7 @@
 
 # misc
 .DS_Store
+.*.sw?
 
 navigator.log
 sandbox.log

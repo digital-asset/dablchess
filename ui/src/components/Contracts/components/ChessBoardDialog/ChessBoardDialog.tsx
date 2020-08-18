@@ -3,8 +3,8 @@ import Chessboard, {Piece as CPiece, Position} from "chessboardjsx";
 import { Button, ButtonGroup, Dialog, DialogTitle } from "@material-ui/core";
 import { ContractId } from "@daml/types";
 import { useLedger } from "@daml/react";
-import { ActiveSideOfGame, Move, PassiveSideOfGame } from "@daml-ts/chess-0.4.0/lib/Chess";
-import { Coord, Piece, PieceType, Side, SplitGameState } from "@daml-ts/chess-0.4.0/lib/Types";
+import { ActiveSideOfGame, Move, PassiveSideOfGame } from "@daml-ts/chess-0.5.0/lib/Chess";
+import { Coord, Piece, PieceType, Side, SplitGameState } from "@daml-ts/chess-0.5.0/lib/Types";
 import { useStyles } from "./styles";
 
 type backgroundColorStyle = {
@@ -119,8 +119,8 @@ export default function ChessBoardDialog({open, side, onClose, game, c} : ChessB
       onDrop = ({sourceSquare, targetSquare, piece}) => {
         delete position[sourceSquare];
         position[targetSquare] = piece;
-        const from = Coord.decoder().runWithException(sourceSquare.toUpperCase());
-        const to = Coord.decoder().runWithException(targetSquare.toUpperCase());
+        const from = Coord.decoder.runWithException(sourceSquare.toUpperCase());
+        const to = Coord.decoder.runWithException(targetSquare.toUpperCase());
         const lastRow = parseInt(targetSquare[1], 10);
         if( (piece === "wP" && lastRow === 8 && game.side === Side.White)
           || (piece === "bP" && lastRow === 1 && game.side === Side.Black) ){

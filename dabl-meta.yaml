@@ -1,12 +1,12 @@
 catalog:
     name: DABL Chess
-    version: 0.1.0
+    version: 0.5.0
     description: A Fog-of-War variant of chess.
     release_date: 2020-06-18
     author: Digital Asset (Switzerland) GmbH
     url: https://github.com/digital-asset/dablchess
     license: Apache-2.0
 subdeployments:
-    - dablchess-bot-0.4.0.tar.gz
-    - dablchess-model-0.4.0.dar
-    - dablchess-ui-0.4.0.zip
+    - dablchess-bot-0.5.0.tar.gz
+    - dablchess-model-0.5.0.dar
+    - dablchess-ui-0.5.0.zip
