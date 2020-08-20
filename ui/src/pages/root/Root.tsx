@@ -3,7 +3,7 @@ import Contracts from "../../components/Contracts/Contracts";
 import { useStreamQuery } from "@daml/react";
 import { ActiveSideOfGame, DrawRequest, GameProposal, GameResult, PassiveSideOfGame } from "@daml-ts/chess-0.5.0/lib/Chess";
 
-export default function GamesTable() {
+export default function Root() {
 
   const gameProposals = useStreamQuery(GameProposal).contracts;
   const activeGames = useStreamQuery(ActiveSideOfGame).contracts;

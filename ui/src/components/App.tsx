@@ -7,18 +7,12 @@ import Login from "../pages/login/Login";
 import { useUserState, useUserDispatch } from "../context/UserContext";
 
 export default function App() {
-  const gamesTablePath = "/app/games-table";
   const userState = useUserState();
 
   return (
     <HashRouter>
       <Switch>
         <Route exact path="/" component={RootRoute} />
-        <Route
-          exact
-          path="/app"
-          render={() => <Redirect to={gamesTablePath} />}
-        />
         <PrivateRoute path="/app" />
         <PublicRoute path="/login" />
         <Route component={Error} />
@@ -49,7 +43,7 @@ export default function App() {
     })
 
     return (
-      <Redirect to={gamesTablePath} />
+      <Redirect to={"/app"} />
     )
   }
   function PrivateRoute({ ...rest } ) {

@@ -3,7 +3,7 @@ import { Route, Switch, withRouter } from "react-router-dom";
 import classnames from "classnames";
 import useStyles from "./styles";
 import Header from "../Header/Header";
-import GamesTable from "../../pages/games-table/GamesTable";
+import Root from "../../pages/root/Root";
 import DamlLedger from "@daml/react";
 import { useUserState } from "../../context/UserContext";
 import { SessionProvider } from "../../context/SessionContext";
@@ -26,7 +26,7 @@ function Layout() {
                 <div className={classnames(classes.content, { [classes.contentShift]: false })} >
                   <div className={classes.fakeToolbar} />
                   <Switch>
-                    <Route path="/app/games-table" component={GamesTable} />
+                    <Route path="/app" component={Root} />
                   </Switch>
                 </div>
               </>
