@@ -54,6 +54,14 @@ export default function NewGameDialog({open, handleClose} : NewGameDialogProp) {
       <Dialog open={open} onClose={() => onClose(false)} aria-labelledby="form-dialog-title">
         <DialogTitle id="form-dialog-title">Propose a game</DialogTitle>
         <DialogContent>
+          <AliasedTextField
+            placeholder="opponent"
+            onChange={(arg1) =>{
+              if(arg1 !== null){
+                setOpponent(arg1)
+              }
+            }}
+          />
           <TextField
             autoFocus={true}
             margin="dense"
@@ -62,14 +70,6 @@ export default function NewGameDialog({open, handleClose} : NewGameDialogProp) {
             label="Game Id"
             fullWidth
             onChange={e => setGameId(e.target.value)}
-          />
-          <AliasedTextField
-            placeholder="opponent"
-            onChange={(arg1) =>{
-              if(arg1 !== null){
-                setOpponent(arg1)
-              }
-            }}
           />
           <FormControl component="fieldset"  >
             <FormLabel component="legend">Desired Side</FormLabel>
