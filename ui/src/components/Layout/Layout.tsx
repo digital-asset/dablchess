@@ -4,6 +4,7 @@ import classnames from "classnames";
 import useStyles from "./styles";
 import Header from "../Header/Header";
 import Root from "../../pages/root/Root";
+import Rootn from "../../pages/rootn/Rootn";
 import DamlLedger from "@daml/react";
 import { useUserState } from "../../context/UserContext";
 import { SessionProvider } from "../../context/SessionContext";
@@ -26,6 +27,7 @@ function Layout() {
                 <div className={classnames(classes.content, { [classes.contentShift]: false })} >
                   <div className={classes.fakeToolbar} />
                   <Switch>
+                    <Route path="/app/n" component={Rootn} />
                     <Route path="/app" component={Root} />
                   </Switch>
                 </div>
