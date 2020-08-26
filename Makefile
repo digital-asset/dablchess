@@ -37,7 +37,7 @@ $(js_bindings_dir):
 	daml codegen js -o $(js_bindings_dir) .daml/dist/chess-$(dar_version).dar > $(daml_codegen_log)
 
 $(sandbox_pid): |$(daml_build_log)
-	daml start --start-navigator "no" > $(sandbox_log) & echo "$$!" > $(sandbox_pid)
+	daml start > $(sandbox_log) & echo "$$!" > $(sandbox_pid)
 
 start_daml_server: $(sandbox_pid)
 
