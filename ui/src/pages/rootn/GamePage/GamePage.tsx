@@ -2,11 +2,26 @@ import React, {useState} from "react";
 import { Button, ButtonGroup, Dialog, DialogTitle } from "@material-ui/core";
 import Chessboard, {Piece as CPiece, Position} from "chessboardjsx";
 import { useLedger } from "@daml/react";
-import { Coord, Piece, PieceType, Side } from "@daml-ts/chess-0.5.0/lib/Types";
+import { Coord, Piece, PieceType, Side, SplitGameState } from "@daml-ts/chess-0.5.0/lib/Types";
 import { useStyles } from "./styles";
 
 import { ActiveSideOfGame, ActiveMove, ActiveDrawClaim, EndGameProposal, Move, PassiveSideOfGame} from "@daml-ts/chess-0.5.0/lib/Chess";
-import { DisplayableGameContract, splitGame } from "../../common";
+import { DisplayableGameContract } from "../../../common";
+
+function splitGame(c:DisplayableGameContract):SplitGameState{
+  switch(c.templateId){
+    case ActiveSideOfGame.templateId:
+      return c.payload.active;
+    case ActiveMove.templateId:
+      return c.payload.active;
+    case ActiveDrawClaim.templateId:
+      return c.payload.active;
+    case EndGameProposal.templateId:
+      return c.payload.state.value;   // Does not matter if left or right.
+    case PassiveSideOfGame.templateId:
+      return c.payload.passive;
+  }
+}
 
 type backgroundColorStyle = {
   backgroundColor : string
@@ -60,11 +75,6 @@ lightSquareStyle: { backgroundColor: 'rgb(240, 217, 181)' }
 const visibleDarkStyle : backgroundColorStyle = { backgroundColor: 'rgb(135, 102, 74)'};
 const visibleLightStyle : backgroundColorStyle = { backgroundColor: 'rgb(210, 189, 158)'};
 
-
-type GamePageProp = {
-  c : DisplayableGameContract
-}
-
 function toSide(c:DisplayableGameContract){
   let s : Side = c.payload.side;
   switch(s){
@@ -73,10 +83,6 @@ function toSide(c:DisplayableGameContract){
     case Side.Black:
       return "black";
   }
-}
-
-function draggable(c:DisplayableGameContract){
-  return c.templateId === ActiveSideOfGame.templateId;
 }
 
 function toTitle(c:DisplayableGameContract){
@@ -93,10 +99,14 @@ function toTitle(c:DisplayableGameContract){
       return c.payload.passive.inCheck_ ? "Check!" : "Waiting for your turn.";
   }
 }
+type GamePageProp = {
+  c : DisplayableGameContract
+}
+
 
 export default function GamePage({c} : GamePageProp) {
-  console.log(`The game is ${JSON.stringify(c)}`);
 
+  console.log(`c is ${JSON.stringify(c)}`);
   const classes = useStyles();
   const ledger = useLedger();
 
@@ -120,12 +130,12 @@ export default function GamePage({c} : GamePageProp) {
     }
   }
 
+  console.log(`The positions should be ${JSON.stringify(position)}`);
+
   async function exerciseMove(contract : ActiveSideOfGame.CreateEvent, move : Move ){
     const [choiceReturnValue, events] = await ledger.exercise(ActiveSideOfGame.Move, contract.contractId, move);
-    console.log(`After moving ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
+    console.info(`After moving ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
-
-  function allowDrag(){ return draggable(c); }
 
   let title = toTitle(c);
   let onDrop : ((m : moveArgs) => void) | undefined;
@@ -137,9 +147,9 @@ export default function GamePage({c} : GamePageProp) {
         const from = Coord.decoder.runWithException(sourceSquare.toUpperCase());
         const to = Coord.decoder.runWithException(targetSquare.toUpperCase());
         const lastRow = parseInt(targetSquare[1], 10);
-        if( (piece === "wP" && lastRow === 8 && game.side === Side.White)
-          || (piece === "bP" && lastRow === 1 && game.side === Side.Black) ){
-            console.log('Time to promote!')
+        if( (piece === "wP" && lastRow === 8 && game.side === Side.White) ||
+            (piece === "bP" && lastRow === 1 && game.side === Side.Black) ){
+            console.info('Time to promote!')
             setOpenPromoteDialog(true);
         }
         const move : Move = { from, to, promote};
@@ -149,10 +159,11 @@ export default function GamePage({c} : GamePageProp) {
     default:
       onDrop = undefined;
   }
-  console.log(`Ok ${JSON.stringify(c)}`);
+  //console.log(`Ok ${JSON.stringify(c)}`);
 
   return (
     <>
+      <div hidden={true}>{c.contractId}</div>
       <h1>{title}</h1>
       <div className={game.inCheck_ ? classes.checkedBoardDiv : classes.regularBoardDiv}>
         <PromotePieceTypeDialog
@@ -160,8 +171,9 @@ export default function GamePage({c} : GamePageProp) {
           setPromotion={setPromotion}
         />
         <Chessboard
-          allowDrag={allowDrag}
+          id={c.contractId}
           boardStyle={{margin:"auto"}}
+          draggable={c.templateId === ActiveSideOfGame.templateId}
           onDrop={onDrop}
           orientation={toSide(c)}
           position={position}
