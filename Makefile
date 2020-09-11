@@ -1,3 +1,10 @@
+BASENAME=$(shell yq -r '.catalog.name' < dabl-meta.yaml)
+VERSION=$(shell yq -r '.catalog.version' < dabl-meta.yaml)
+
+TAG_NAME=${BASENAME}-v${VERSION}
+NAME=${BASENAME}-${VERSION}
+DAR_NAME=${BASENAME}.dar
+
 # Development
 
 # It would be nice to keep these versions in sync.
@@ -20,9 +27,16 @@ yarn_pid := $(state_dir)/yarn.pid
 yarn_log := $(state_dir)/yarn.log
 
 js_bindings_dir := daml-ts
+target_dir := target
 
-.PHONE: all
+.PHONY: all package publish
 all: package
+
+publish: package
+	git tag -f "${TAG_NAME}"
+	ghr -replace "${TAG_NAME}" "$(target_dir)/${NAME}.dit"
+
+package: $(target_dir)/${NAME}.dit
 
 ### DAML server
 .PHONY: clean stop_daml_server stop_operator stop_yarn_server
@@ -77,7 +91,6 @@ stop_all: stop_daml_server stop_operator stop_ui_server
 
 # Release
 
-target_dir := target
 dar := $(target_dir)/dablchess-model-$(dar_version).dar
 bot := $(target_dir)/dablchess-bot-$(bot_version).tar.gz
 ui := $(target_dir)/dablchess-ui-$(ui_version).zip
@@ -86,9 +99,8 @@ dabl_meta := $(target_dir)/dabl-meta.yaml
 $(target_dir):
 	mkdir $@
 
-.PHONY: package
-package: $(bot) $(dar) $(ui) $(dabl_meta)
-	cd $(target_dir) && zip dabl-chess.dit *
+$(target_dir)/${NAME}.dit: $(target_dir) $(bot) $(dar) $(ui) $(dabl_meta)
+	cd $(target_dir) && zip ${NAME}.dit *
 
 $(dabl_meta): $(target_dir) dabl-meta.yaml
 	cp dabl-meta.yaml $@
