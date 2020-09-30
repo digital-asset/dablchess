@@ -95,12 +95,16 @@ dar := $(target_dir)/dablchess-model-$(dar_version).dar
 bot := $(target_dir)/dablchess-bot-$(bot_version).tar.gz
 ui := $(target_dir)/dablchess-ui-$(ui_version).zip
 dabl_meta := $(target_dir)/dabl-meta.yaml
+icon := $(target_dir)/dabl-chess.png
 
 $(target_dir):
 	mkdir $@
 
-$(target_dir)/${NAME}.dit: $(target_dir) $(bot) $(dar) $(ui) $(dabl_meta)
+$(target_dir)/${NAME}.dit: $(target_dir) $(bot) $(dar) $(ui) $(dabl_meta) $(icon)
 	cd $(target_dir) && zip ${NAME}.dit *
+
+$(icon): $(target_dir) dabl-chess.png
+	cp dabl-chess.png $@
 
 $(dabl_meta): $(target_dir) dabl-meta.yaml
 	cp dabl-meta.yaml $@
