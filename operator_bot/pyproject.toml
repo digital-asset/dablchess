@@ -1,6 +1,10 @@
 [tool.poetry]
 name = "bot"
-version = "0.5.0"
+
+# Version managed externally in dabl-meta.yaml. This version
+# number must match Makefile.
+version = "0.0.1"
+
 description = "An operator bot for DABLChess."
 authors = ["Digital Asset"]
 

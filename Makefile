@@ -1,16 +1,12 @@
-BASENAME=$(shell yq -r '.catalog.name' < dabl-meta.yaml)
-VERSION=$(shell yq -r '.catalog.version' < dabl-meta.yaml)
+DIT_NAME=$(shell ddit targetname)
+BASENAME=$(shell ddit targetname --basename)
+VERSION=$(shell ddit ditversion)
 
-TAG_NAME=${BASENAME}-v${VERSION}
-NAME=${BASENAME}-${VERSION}
-DAR_NAME=${BASENAME}.dar
 
 # Development
 
-# It would be nice to keep these versions in sync.
 dar_version := $(shell grep "^version" daml.yaml | sed 's/version: //g')
-bot_version := $(shell cd operator_bot && poetry version | cut -f 2 -d ' ')
-ui_version := $(shell cd ui && node -p "require(\"./package.json\").version")
+
 
 state_dir := .dev
 daml_build_log = $(state_dir)/daml_build.log
@@ -33,10 +29,9 @@ target_dir := target
 all: package
 
 publish: package
-	git tag -f "${TAG_NAME}"
-	ghr -replace "${TAG_NAME}" "$(target_dir)/${NAME}.dit"
+	ddit release
 
-package: $(target_dir)/${NAME}.dit
+package: ${DIT_NAME}
 
 ### DAML server
 .PHONY: clean stop_daml_server stop_operator stop_yarn_server
@@ -92,33 +87,27 @@ stop_all: stop_daml_server stop_operator stop_ui_server
 # Release
 
 dar := $(target_dir)/dablchess-model-$(dar_version).dar
-bot := $(target_dir)/dablchess-bot-$(bot_version).tar.gz
-ui := $(target_dir)/dablchess-ui-$(ui_version).zip
-dabl_meta := $(target_dir)/dabl-meta.yaml
-icon := $(target_dir)/dabl-chess.png
+bot := $(target_dir)/dablchess-bot-$(VERSION).tar.gz
+ui := $(target_dir)/dablchess-ui-$(VERSION).zip
+
 
 $(target_dir):
 	mkdir $@
 
-$(target_dir)/${NAME}.dit: $(target_dir) $(bot) $(dar) $(ui) $(dabl_meta) $(icon)
-	cd $(target_dir) && zip ${NAME}.dit *
-
-$(icon): $(target_dir) dabl-chess.png
-	cp dabl-chess.png $@
-
-$(dabl_meta): $(target_dir) dabl-meta.yaml
-	cp dabl-meta.yaml $@
+${DIT_NAME}: $(target_dir) $(bot) $(dar) $(ui)
+	ddit build --skip-dar-build \
+		--subdeployment $(bot) $(dar) $(ui)
 
 $(dar): $(target_dir) $(daml_build_log)
 	cp .daml/dist/chess-$(dar_version).dar $@
 
 $(bot): $(target_dir) $(operator_bot_dir)
-	cp operator_bot/dist/bot-$(bot_version).tar.gz $@
+	cp operator_bot/dist/bot-0.0.1.tar.gz $@
 
 $(ui): $(target_dir) $(yarn_build_log)
 	cd ui && yarn build
-	cd ui && zip -r dablchess-ui-$(ui_version).zip build
-	mv ui/dablchess-ui-$(ui_version).zip $@
+	cd ui && zip -r dablchess-ui-$(VERSION).zip build
+	mv ui/dablchess-ui-$(VERSION).zip $@
 
 .PHONY: clean
 clean:
