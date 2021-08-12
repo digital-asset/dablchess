@@ -7,7 +7,7 @@ import GamesTable from "../../pages/games-table/GamesTable";
 import DamlLedger from "@daml/react";
 import { useUserState } from "../../context/UserContext";
 import { AliasMapProvider } from "../../context/AliasMapContext";
-import { WellKnownPartiesProvider } from "../../context/WellKnownPartiesContext";
+import { DefaultPartiesProvider } from "../../context/DefaultPartiesContext";
 import { wsBaseUrl, httpBaseUrl } from "../../config";
 
 function Layout() {
@@ -19,7 +19,7 @@ function Layout() {
 
   return (
     <DamlLedger party={user.party} token={user.token} httpBaseUrl={httpBaseUrl} wsBaseUrl={wsBaseUrl} >
-      <WellKnownPartiesProvider>
+      <DefaultPartiesProvider>
         <AliasMapProvider>
           <div className={classes.root}>
               <>
@@ -33,7 +33,7 @@ function Layout() {
               </>
           </div>
         </AliasMapProvider>
-      </WellKnownPartiesProvider>
+      </DefaultPartiesProvider>
     </DamlLedger>
   );
 }

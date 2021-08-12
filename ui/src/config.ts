@@ -22,7 +22,7 @@ export function createToken(party : string) {
 
 export const dablLoginUrl : string = `${apiUrl}/.hub/v1/auth/login`;
 
-export const wellKnownUrl : string = `${apiUrl}/.well-known/dabl.json`;
+export const defaultPartiesUrl : string = `${apiUrl}/.hub/v1/default-parties`;
 
 export const publicTokenUrl = `https://${apiUrl}/.hub/v1/public/token`;
 
@@ -32,6 +32,6 @@ console.log(`Config:
   httpBaseUrl ${httpBaseUrl}
   wsBaseUrl ${wsBaseUrl}
   dablLoginUrl ${dablLoginUrl}
-  wellKnownUrl ${wellKnownUrl}
+  defaultPartiesUrl ${defaultPartiesUrl}
   publicTokenUrl ${publicTokenUrl}
 `);

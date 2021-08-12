@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import { TextField } from "@material-ui/core";
 import { useLedger } from "@daml/react";
 import { useUserState } from "../../../../context/UserContext";
-import { useWellKnownParties } from "../../../../context/WellKnownPartiesContext";
+import { useDefaultParties } from "../../../../context/DefaultPartiesContext";
 import { useAliasMaps } from "../../../../context/AliasMapContext";
 import useStyles from "./styles";
 import { AliasRequest } from "@daml-ts/chess-0.5.0/lib/Alias";
@@ -10,7 +10,7 @@ import { AliasRequest } from "@daml-ts/chess-0.5.0/lib/Alias";
 export default function AliasField(){
 
   const classes = useStyles();
-  const wellKnownParties = useWellKnownParties();
+  const defaultParties = useDefaultParties();
   const ledger = useLedger();
   const [alias, setAlias] = useState<string>("");
   const aliasMap = useAliasMaps();
@@ -32,7 +32,7 @@ export default function AliasField(){
   async function onAliasEnter(newAliasValue : string){
     let args = { user
                , alias : newAliasValue
-               , operator : wellKnownParties.userAdminParty
+               , operator : defaultParties.userAdminParty
                };
     let aliasRequest = await ledger.create(AliasRequest, args);
     console.log(`Sent an aliasRequest ${JSON.stringify(args)} -> ${JSON.stringify(aliasRequest)}`);
