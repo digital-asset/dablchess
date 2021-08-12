@@ -4,7 +4,7 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl,
        , Radio, RadioGroup, TextField, } from '@material-ui/core';
 import { Autocomplete } from '@material-ui/lab';
 import { useUserState } from "../../../../context/UserContext";
-import { useWellKnownParties } from "../../../../context/WellKnownPartiesContext";
+import { useDefaultParties } from "../../../../context/DefaultPartiesContext";
 import { useAliasMaps } from "../../../../context/AliasMapContext";
 import { GameProposal } from "@daml-ts/chess-0.5.0/lib/Chess";
 import { Side } from "@daml-ts/chess-0.5.0/lib/Types";
@@ -20,7 +20,7 @@ class AutocompleteOption {
 
 export default function NewGameDialog({open, handleClose} : NewGameDialogProp) {
 
-  const wellKnownParties = useWellKnownParties();
+  const defaultParties = useDefaultParties();
   const [gameId, setGameId] = useState<string>("");
   const [opponentField, setOpponentField] = useState<string>("");
   const [side, setSide] = useState<Side>(Side.White);
@@ -52,7 +52,7 @@ export default function NewGameDialog({open, handleClose} : NewGameDialogProp) {
       let gameProposalArgs =  { gameId
                               , proposer
                               , opponent:opponent
-                              , operator:wellKnownParties.userAdminParty
+                              , operator:defaultParties.userAdminParty
                               , desiredSide:side
                               };
       console.log("A game proposal args:" + JSON.stringify(gameProposalArgs));
