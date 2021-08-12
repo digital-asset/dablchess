@@ -4,6 +4,7 @@ import Layout from "./Layout/Layout";
 import Error from "../pages/error/Error";
 import Login from "../pages/login/Login";
 import { useUserState, useUserDispatch } from "../context/UserContext";
+import jwt_decode from "jwt-decode";
 
 export default function App() {
   const gamesTablePath = "/app/games-table";
@@ -32,17 +33,21 @@ export default function App() {
 
     useEffect(() => {
       const url = new URL(window.location.toString());
-      const token = url.searchParams.get('token');
-      if (token === null) {
-        return;
+      const tokenCookiePair = document.cookie.split('; ').find(row => row.startsWith('DAMLHUB_LEDGER_ACCESS_TOKEN')) || '';
+      const tokenCookieSecret = tokenCookiePair.slice(tokenCookiePair.indexOf('=') + 1);
+    
+      const token = tokenCookieSecret || localStorage.getItem('daml.token');
+      if (!token) {
+        return undefined
       }
-      const party = url.searchParams.get('party');
-      if (party === null) {
-        console.log("When 'token' is passed via URL, 'party' must be passed too.");
-        throw Error();
+
+      const party = partyFromToken(token) || localStorage.getItem('daml.party');
+      if (!party) {
+        return undefined
       }
-      localStorage.setItem("daml.party", party);
+
       localStorage.setItem("daml.token", token);
+      localStorage.setItem("daml.party", party);
 
       userDispatch({ type: "LOGIN_SUCCESS", token, party });
     })
@@ -90,5 +95,15 @@ export default function App() {
         }
       />
     );
+  }
+}
+
+const partyFromToken = (token : string) : string | undefined => {
+  try {
+    const decoded : any = jwt_decode(token);
+    return decoded["https://daml.com/ledger-api"].actAs.shift()
+  } catch (e) {
+    console.log(e.message || "failed to extract party from jwt token")
+    return undefined;
   }
 }
