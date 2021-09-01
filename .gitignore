@@ -21,3 +21,5 @@ package.json
 daml-ts/
 .vscode
 target/
+
+daml-chess-*.dit
