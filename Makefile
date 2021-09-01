@@ -86,9 +86,9 @@ stop_all: stop_daml_server stop_operator stop_ui_server
 
 # Release
 
-dar := $(target_dir)/dablchess-model-$(dar_version).dar
-bot := $(target_dir)/dablchess-bot-$(VERSION).tar.gz
-ui := $(target_dir)/dablchess-ui-$(VERSION).zip
+dar := $(target_dir)/damlchess-model-$(dar_version).dar
+bot := $(target_dir)/damlchess-bot-$(VERSION).tar.gz
+ui := $(target_dir)/damlchess-ui-$(VERSION).zip
 
 
 $(target_dir):
@@ -106,9 +106,9 @@ $(bot): $(target_dir) $(operator_bot_dir)
 
 $(ui): $(target_dir) $(yarn_build_log)
 	cd ui && yarn build
-	cd ui && zip -r dablchess-ui-$(VERSION).zip build
-	mv ui/dablchess-ui-$(VERSION).zip $@
+	cd ui && zip -r damlchess-ui-$(VERSION).zip build
+	mv ui/damlchess-ui-$(VERSION).zip $@
 
 .PHONY: clean
 clean:
-	rm -rf $(state_dir) $(operator_bot_dir) $(js_bindings_dir) $(target_dir)
+	rm -rf $(state_dir) $(operator_bot_dir) $(js_bindings_dir) $(target_dir) *.dit *.dar
