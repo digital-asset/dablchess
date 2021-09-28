@@ -1,10 +1,11 @@
 catalog:
     name: daml-chess
-    version: 1.0.0
+    version: 1.0.1
     short_description: Daml Chess
     description: A Fog-of-War variant of chess.
     author: Digital Asset (Switzerland) GmbH
     url: https://github.com/digital-asset/dablchess
+    source_url: https://github.com/digital-asset/dablchess
     license: Apache-2.0
     tags: [dabl-sample-app, application]
     icon_file: dabl-chess.png
