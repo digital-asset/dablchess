@@ -17,7 +17,7 @@ export default function Error() {
       <div className={classes.logotype}>
         <img className={classes.logotypeIcon} src={logo} alt="logo" />
         <Typography variant="h3" className={classes.logotypeText}>
-          DABL Chess
+          Daml Chess
         </Typography>
       </div>
       <Paper classes={{ root: classes.paperRoot }}>
