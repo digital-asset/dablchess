@@ -8,35 +8,30 @@
 >
 > THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-# DABL Chess
+# Daml Chess
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 [![CircleCI](https://circleci.com/gh/digital-asset/dablchess.svg?style=svg)](https://circleci.com/gh/digital-asset/dablchess)
 
 
-Welcome to DABL Chess! A DAML app that can be deployed to [project:DABL](https://projectdabl.com/). DABL Chess is a fog-of-war [variant](https://en.wikipedia.org/wiki/Dark_chess) of Chess where you see only your pieces and where they can move. We demonstrate the power of [DAML](https://daml.com/) as the state of the two sides are encoded in separate [smart contracts](daml/Chess.daml); what you know depends on DAML's [ledger model](https://docs.daml.com/concepts/ledger-model/ledger-integrity.html), but you can still play via an intermediary.
+Welcome to Daml Chess! A DAML app that can be deployed to [Daml Hub](https://hub.daml.com/). Daml Chess is a fog-of-war [variant](https://en.wikipedia.org/wiki/Dark_chess) of Chess where you see only your pieces and where they can move. We demonstrate the power of [DAML](https://daml.com/) as the state of the two sides are encoded in separate [smart contracts](daml/Chess.daml); what you know depends on DAML's [ledger model](https://docs.daml.com/concepts/ledger-model/ledger-integrity.html), but you can still play via an intermediary.
 
 > Copyright (c) 2020, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved. SPDX-License-Identifier: 0BSD
 
 # Getting Started
 
-## Deploying to [project:DABL](https://projectdabl.com/).
+## Deploying to [Daml Hub](https://hub.daml.com/).
 
-### 1. Create a ledger to run DABL Chess on
+### 1. Create a ledger to run Daml Chess on
 
-Log in to [project:DABL](https://projectdabl.com/) and create a new ledger under an existing or a new project.
+Log in to [Daml Hub](https://hub.daml.com/) and scroll to the bottom of the workspace. Click the Deploy button on the Daml Chess tile.
 
-### 2. Upload and deploy to DABL
-
-Unzip and upload the three release files to your [project:DABL](https://projectdabl.com/) collections. Then drag and drop the each one of them to your newly created ledger.
-
-### 3. Set up your automation and UI
-
-Click on your ledger and navigate to the _Automation_ tab. Click on `change` next to _Running as:_ and redeploy the bot as the `UserAdmin` party.
+### 2. Set up your automation
+Click on your new Daml Chess ledger and finish deploying the Daml Chess package by clicking Deploy Instance. Then, once your ledger has the status _Running_, add the User Admin party in the _Identities_ tab. Finally, go back to the _Deployments_ tab and click on the Automation file. Configure a new instance of this automation as the User Admin party.
 
 ### 4. Log in and start playing!
 
-You can find the subdomain url of your DABLChess app in the _UI Assets_ tab.  When you login, give yourself an alias so that you are discoverable to other players.
+You can find the subdomain url of your Daml Chess app in the _Ledger Settings_ or _Deployments_ tab of your ledger.  When you login, give yourself an alias so that you are discoverable to other players.
 
 ## Developing
 
@@ -44,7 +39,7 @@ You can find the subdomain url of your DABLChess app in the _UI Assets_ tab.  Wh
 
 - Git (to clone the repository)
 - The [DAML SDK](https://docs.daml.com/getting-started/installation.html) (to build the model)
-- [Poetry](https://python-poetry.org/) Python 3.6 or later (For [Python automation bot](https://docs.projectdabl.com/).)
+- [Poetry](https://python-poetry.org/) Python 3.6 or later (For [Python automation bot](https://hub.daml.com/docs).)
 - [yarn](https://classic.yarnpkg.com/en/) (to build UI).
 
 ### 2. Clone this repo
