@@ -5,7 +5,7 @@ import { RouteComponentProps, withRouter } from 'react-router-dom';
 import logo from './logo.svg';
 import { useUserDispatch, loginUser, loginDamlHubUser } from '../../context/UserContext';
 import { isLocalDev } from '../../config';
-
+import { DamlChessLogo } from '../../components/common/SiteLogo';
 const classes = {
   container: 'container',
   logotypeContainer: 'logotypeContainer',
