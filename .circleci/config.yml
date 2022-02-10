@@ -7,7 +7,7 @@ version: 2.1
 
 commands:
   install_sdk:
-    description: "Install the DAML SDK"
+    description: 'Install the DAML SDK'
     parameters:
       version:
         type: string
@@ -22,11 +22,10 @@ commands:
             cd ${HOME}
             rm -rf sdk-<< parameters.version >>
 
-
 jobs:
   build:
     docker:
-     - image: circleci/python:3-node
+      - image: circleci/python:3-node
 
     steps:
       - checkout
@@ -38,7 +37,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y --no-install-recommends openjdk-11-jdk
       - install_sdk:
-          version: "1.4.0"
+          version: '1.18.1'
       - save_cache:
           paths:
             - ~/.daml

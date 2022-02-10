@@ -1,60 +1,57 @@
-import React, {useEffect, useState} from "react";
-import { TextField } from "@material-ui/core";
-import { useLedger } from "@daml/react";
-import { useUserState } from "../../../../context/UserContext";
-import { useDefaultParties } from "../../../../context/DefaultPartiesContext";
-import { useAliasMaps } from "../../../../context/AliasMapContext";
-import useStyles from "./styles";
-import { AliasRequest } from "@daml-ts/chess-0.5.0/lib/Alias";
+import React, { useEffect, useState } from 'react';
+import { TextField } from '@material-ui/core';
+import { useLedger } from '@daml/react';
+import { useUserState } from '../../../../context/UserContext';
+import { useDefaultParties } from '../../../../context/DefaultPartiesContext';
+import { useAliasMaps } from '../../../../context/AliasMapContext';
+import useStyles from './styles';
+import { AliasRequest } from '@daml-ts/chess-0.5.0/lib/Alias';
 
-export default function AliasField(){
-
+export default function AliasField() {
   const classes = useStyles();
   const defaultParties = useDefaultParties();
   const ledger = useLedger();
-  const [alias, setAlias] = useState<string>("");
+  const [alias, setAlias] = useState<string>('');
   const aliasMap = useAliasMaps();
   const userState = useUserState();
   useEffect(() => {
-    if(userState.isAuthenticated){
-      setAlias(aliasMap.toAlias(userState.party))
+    if (userState.isAuthenticated) {
+      setAlias(aliasMap.toAlias(userState.party));
     }
-  }, [userState, aliasMap])
+  }, [userState, aliasMap]);
 
-  if(!userState.isAuthenticated){
+  if (!userState.isAuthenticated) {
     return null;
   }
-  const user = userState.party;   // Assigning it here avoids a cast later
+  const user = userState.party; // Assigning it here avoids a cast later
 
-  function handleChange(event : React.ChangeEvent<HTMLInputElement>){
-    setAlias(event.target.value)
-  };
-  async function onAliasEnter(newAliasValue : string){
-    let args = { user
-               , alias : newAliasValue
-               , operator : defaultParties.userAdminParty
-               };
+  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    setAlias(event.target.value);
+  }
+  async function onAliasEnter(newAliasValue: string) {
+    let args = { user, alias: newAliasValue, operator: defaultParties.userAdminParty };
     let aliasRequest = await ledger.create(AliasRequest, args);
     console.log(`Sent an aliasRequest ${JSON.stringify(args)} -> ${JSON.stringify(aliasRequest)}`);
     //Do not setAlias(newAliasValue) wait until we get a confirm.
-  };
-  function handleKeyDown(event : React.KeyboardEvent<HTMLInputElement>){
-    if (event.key === "Enter") {
+  }
+  function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Enter') {
       onAliasEnter((event.target as HTMLInputElement).value);
     }
-  };
+  }
   return (
     <TextField
       id="alias"
       InputProps={{
         classes: {
-          input:classes.textField
+          input: classes.lightTextField,
+          root: classes.root,
         },
       }}
       FormHelperTextProps={{
-        className:classes.formHelperText
+        className: classes.formHelperText,
       }}
-      className={classes.textField}
+      className={classes.lightTextField}
       label="Alias"
       helperText="Enter an alias to for easier identification."
       // How can I create the effect that this alias has been set?
