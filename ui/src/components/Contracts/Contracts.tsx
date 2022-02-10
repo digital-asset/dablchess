@@ -345,7 +345,7 @@ export default function Contracts({
   const reload = useReload();
   const tableIsEmpty =
     gameProposals.length === 0 &&
-    activeGames.length == 0 &&
+    activeGames.length === 0 &&
     passiveGames.length === 0 &&
     drawRequests.length === 0 &&
     gameResults.length === 0;

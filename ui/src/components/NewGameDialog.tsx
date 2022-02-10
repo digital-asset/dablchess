@@ -51,7 +51,9 @@ export default function NewGameDialog({ open, handleClose }: NewGameDialogProp) 
       let gameProposalPromise = await ledger.create(GameProposal, args);
       console.log('We created a game: ' + JSON.stringify(gameProposalPromise));
     } catch (error) {
-      alert('Error creating a gameProposal' + error + ' ' + JSON.stringify(args));
+      alert(
+        'Error creating a gameProposal: \n' + error['errors'].join('. ') + ' \n With payload: \n' + JSON.stringify(args)
+      );
     }
   }
 

@@ -1,0 +1,32 @@
+@mixin error-page {
+  .error-page {
+    width: 100%;
+    display: flex;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    .error-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: unset;
+      border: none;
+      box-shadow: none;
+      margin: $spacing-l;
+      h1,
+      h2,
+      h3,
+      a {
+        margin: $spacing-m;
+      }
+      a {
+        color: $text-color;
+        font-family: $font-regular;
+        background-color: $light-1;
+        border: 1px solid $light-4;
+        box-shadow: none;
+      }
+    }
+  }
+}

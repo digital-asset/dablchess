@@ -17,7 +17,7 @@ function Header({ history }: RouteComponentProps<any>) {
   }
 
   return (
-    <AppBar position={'static'} className={'header-nav'}>
+    <div className={'header-nav'}>
       <Toolbar className={classes.toolbar}>
         <div className="header-info">
           <Logo size="small" />
@@ -38,7 +38,7 @@ function Header({ history }: RouteComponentProps<any>) {
           <AliasField />
         </div>
       </Toolbar>
-    </AppBar>
+    </div>
   );
 }
 

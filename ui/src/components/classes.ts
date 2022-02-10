@@ -18,4 +18,9 @@ export const classes = {
   newGameButton: 'newGameButton',
   tableRow: 'tableRow',
   tableCell: 'tableCell',
+  paperRoot: 'paperRoot',
+  textRow: 'textRow',
+  safetyText: 'safetyText',
+  errorCode: 'errorCode',
+  backButton: 'backButton',
 };

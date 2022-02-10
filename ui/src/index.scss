@@ -1,6 +1,7 @@
 @import './pages/login/Login.scss';
 @import './components/Header/Header.scss';
 @import './components/Contracts/Contracts.scss';
+@import './pages/error/Error.scss';
 
 $light-1: #fff4f4;
 $light-2: #ffdada;
@@ -45,6 +46,14 @@ html {
     margin: 0;
     font-family: $font-regular;
 
+    .MuiInputBase-input {
+      color: $text-color;
+    }
+    .MuiInput-underline:after,
+    .MuiInput-underline:before {
+      border-bottom: 1px solid $text-color;
+    }
+
     .MuiDialog-paper {
       width: 900px;
       padding: $spacing-s;
@@ -52,6 +61,10 @@ html {
 
     .MuiPaper-elevation4 {
       box-shadow: none;
+    }
+
+    .makeStyles-root-12 {
+      flex-direction: column;
     }
 
     #root {
@@ -63,6 +76,8 @@ html {
       @include login;
       @include header-nav;
       @include contracts;
+      @include error-page;
+
       .makeStyles-root-1 {
         flex-direction: column;
       }
@@ -96,6 +111,7 @@ html {
         font-family: $font-regular;
         background-color: $light-1;
         border: 1px solid $light-4;
+        box-shadow: none;
         &.MuiIconButton-root {
           border-radius: 4px;
           border: 1px solid $light-4;
