@@ -1,7 +1,8 @@
 {
-    "//": "Base config since daml codegen generates new files.",
-    "private": true,
-    "workspaces": [
-        "ui"
-    ]
+  "//": "Base config since daml codegen generates new files.",
+  "private": true,
+  "workspaces": ["ui"],
+  "scripts": {
+    "format": "npx prettier --write ."
+  }
 }

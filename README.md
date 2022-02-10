@@ -13,7 +13,6 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 [![CircleCI](https://circleci.com/gh/digital-asset/dablchess.svg?style=svg)](https://circleci.com/gh/digital-asset/dablchess)
 
-
 Welcome to Daml Chess! A DAML app that can be deployed to [Daml Hub](https://hub.daml.com/). Daml Chess is a fog-of-war [variant](https://en.wikipedia.org/wiki/Dark_chess) of Chess where you see only your pieces and where they can move. We demonstrate the power of [DAML](https://daml.com/) as the state of the two sides are encoded in separate [smart contracts](daml/Chess.daml); what you know depends on DAML's [ledger model](https://docs.daml.com/concepts/ledger-model/ledger-integrity.html), but you can still play via an intermediary.
 
 > Copyright (c) 2020, Digital Asset (Switzerland) GmbH and/or its affiliates. All rights reserved. SPDX-License-Identifier: 0BSD
@@ -27,11 +26,12 @@ Welcome to Daml Chess! A DAML app that can be deployed to [Daml Hub](https://hub
 Log in to [Daml Hub](https://hub.daml.com/) and scroll to the bottom of the workspace. Click the Deploy button on the Daml Chess tile.
 
 ### 2. Set up your automation
+
 Click on your new Daml Chess ledger and finish deploying the Daml Chess package by clicking Deploy Instance. Then, once your ledger has the status _Running_, add the User Admin party in the _Identities_ tab. Finally, go back to the _Deployments_ tab and click on the Automation file. Configure a new instance of this automation as the User Admin party.
 
 ### 4. Log in and start playing!
 
-You can find the subdomain url of your Daml Chess app in the _Ledger Settings_ or _Deployments_ tab of your ledger.  When you login, give yourself an alias so that you are discoverable to other players.
+You can find the subdomain url of your Daml Chess app in the _Ledger Settings_ or _Deployments_ tab of your ledger. When you login, give yourself an alias so that you are discoverable to other players.
 
 ## Developing
 
@@ -60,14 +60,21 @@ $ make start_ui_server
 ```
 
 or
+
 ```bash
 $ make start_all
 ```
-### 4. Release
+
+### 4. Stop the game locally:
+
+```bash
+$ make stop_all
+```
+
+### 5. Release
 
 ```bash
 $ make package
 ```
 
 This will create a versioned `dablchess-x.x.x.dar` file containing the compiled DAML model, a `dablchess-bot-x.x.x.tar.gz` tarball containing the python automation, and a `dablchess-ui-x.x.x.zip` archive containing the UI static assets. These files will be zipped into a `dabl-chess.zip` under the `target/` directory.
-

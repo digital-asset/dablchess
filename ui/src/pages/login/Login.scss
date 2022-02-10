@@ -1,0 +1,130 @@
+
+
+@mixin login {
+    .logotypeContainer {
+        width: 60%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      .logotypeImage {
+        width: 165px;
+        margin-bottom: $spacing-m;
+      }
+      .logotypeText {
+        color: #3a478f;
+        font-weight: 500;
+        font-size: 84;
+      }
+
+  .login {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    .formContainer {
+      width: 40%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .form {
+      width: 320;
+    }
+    .tab {
+      font-weight: 400;
+      font-size: 18;
+    }
+    .greeting {
+      font-weight: 500;
+      text-align: center;
+      margin-top: $spacing-m;
+    }
+    .subGreeting {
+      font-weight: 500;
+      text-align: center;
+      margin-top: $spacing-s;
+    }
+    .googleButton {
+      margin-top: $spacing-l;
+      background-color: white;
+      width: 100%;
+      text-transform: none;
+    }
+    .googleButtonCreating {
+      margin-top: 0;
+    }
+    .googleIcon {
+      width: 30;
+      margin-right: $spacing-s;
+    }
+    .creatingButtonContainer {
+      margin-top: $spacing-s;
+      height: 46;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .createAccountButton {
+      height: 46;
+      text-transform: none;
+    }
+    .formDividerContainer {
+      margin-top: $spacing-m;
+      margin-bottom: $spacing-m;
+      display: flex;
+      align-items: center;
+    }
+    .formDividerWord {
+      padding-left: $spacing-s;
+      padding-right: $spacing-s;
+    }
+    .formDivider {
+      flex-grow: 1;
+      height: 1;
+    }
+    .damlHubLoginButton {
+      margin-bottom: $spacing-s;
+    }
+    .errorMessage {
+      text-align: center;
+    }
+    .textFieldUnderline {
+      &:before {
+      }
+      &:after {
+      }
+      &:hover:before {
+      }
+    }
+    .textField {
+    }
+    .formButtons {
+      width: 100%;
+      margin-top: $spacing-m;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .forgetButton {
+      text-transform: none;
+      font-weight: 400;
+    }
+    .loginLoader {
+      margin-left: $spacing-m;
+    }
+    .copyright {
+      margin-top: $spacing-m;
+      white-space: nowrap;
+    }
+  }
+}
