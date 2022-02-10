@@ -9,7 +9,6 @@ export default makeStyles((theme: any) =>
     },
     content: {
       flexGrow: 1,
-      padding: theme.spacing(3),
       width: `calc(100vw - 240px)`,
       minHeight: '100vh',
     },
@@ -21,6 +20,7 @@ export default makeStyles((theme: any) =>
       }),
     },
     fakeToolbar: {
+      height: '200px',
       ...theme.mixins.toolbar,
     },
   })

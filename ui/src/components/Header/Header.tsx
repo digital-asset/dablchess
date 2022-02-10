@@ -1,64 +1,42 @@
 import React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
-import { AppBar, Button, IconButton, Toolbar, Typography } from '@material-ui/core';
-import { ExitToApp, Refresh } from '@material-ui/icons';
-import useStyles from './styles';
+import { AppBar, Button, Toolbar, Typography } from '@material-ui/core';
+import { ExitToApp } from '@material-ui/icons';
 import { useUserDispatch, useUserState, signOut } from '../../context/UserContext';
-import AliasField from './components/AliasField/AliasField';
-import NewGameDialog from './components/NewGameDialog/NewGameDialog';
-import { useReload } from '@daml/react';
-
-type NewGameButtonProp = {
-  text: string;
-  onClick: () => void;
-};
-
-function NewGameButton({ text, onClick }: NewGameButtonProp) {
-  const classes = useStyles();
-  return (
-    <Button className={classes.newGameButton} variant="contained" onClick={onClick}>
-      {text}
-    </Button>
-  );
-}
+import AliasField from '../AliasField';
+import { classes } from './../classes';
+import { Logo } from '../Logo';
 
 function Header({ history }: RouteComponentProps<any>) {
-  const classes = useStyles();
-
   // global
   const userState = useUserState();
   const userDispatch = useUserDispatch();
-  const reload = useReload();
-  const [newGameDialogOpen, setOpenNewGameDialog] = React.useState<boolean>(false);
+
   if (!userState.isAuthenticated) {
     return null;
   }
 
   return (
-    <AppBar position="fixed" className={classes.appBar}>
+    <AppBar position={'static'} className={'header-nav'}>
       <Toolbar className={classes.toolbar}>
-        <Typography variant="h6" className={classes.logotype}>
-          Daml Chess
-        </Typography>
-        <NewGameButton text="New Game" onClick={() => setOpenNewGameDialog(true)} />
-        <NewGameDialog open={newGameDialogOpen} handleClose={() => setOpenNewGameDialog(false)} />
-        <div className={classes.grow} />
-        <AliasField />
-        <Typography variant="h6">
-          User: {userState.party} {/* Do not set this one to an Alias */}
-        </Typography>
-        <IconButton color="inherit" aria-haspopup="true" onClick={reload} className={classes.headerMenuButton}>
-          <Refresh classes={{ root: classes.headerIcon }} />
-        </IconButton>
-        <IconButton
-          aria-haspopup="true"
-          color="inherit"
-          className={classes.headerMenuButton}
-          aria-controls="profile-menu"
-          onClick={(event) => signOut(event, userDispatch, history)}
-        >
-          <ExitToApp classes={{ root: classes.headerIcon }} />
-        </IconButton>
+        <div className="header-info">
+          <Logo size="small" />
+          <div className="app-info">
+            <Typography variant="h2">Daml Chess</Typography>
+            <p className="p2">
+              Welcome to Daml Chess! Daml Chess is a fog-of-war variant of Chess where you see only your pieces and
+              where they can move. We demonstrate the power of Daml as the state of the two sides are encoded in
+              separate smart contracts; what you know depends on DAML's ledger model, but you can still play via an
+              intermediary.
+            </p>
+          </div>
+          <Button className="exit-button" onClick={(event) => signOut(event, userDispatch, history)}>
+            <ExitToApp classes={{ root: classes.headerIcon }} /> &nbsp; Exit
+          </Button>
+        </div>
+        <div className="header-info controls">
+          <AliasField />
+        </div>
       </Toolbar>
     </AppBar>
   );

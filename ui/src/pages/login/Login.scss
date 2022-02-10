@@ -1,23 +1,15 @@
-
-
 @mixin login {
-    .logotypeContainer {
-        width: 60%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-      }
-      .logotypeImage {
-        width: 165px;
-        margin-bottom: $spacing-m;
-      }
-      .logotypeText {
-        color: #3a478f;
-        font-weight: 500;
-        font-size: 84;
-      }
+  .logotypeContainer {
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    h1 {
+      margin-top: $spacing-s;
+    }
+  }
 
   .login {
     height: 100vh;
@@ -30,12 +22,20 @@
     left: 0;
 
     .formContainer {
-      width: 40%;
+      width: 50%;
       height: 100%;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
+      background-color: $theme-color;
+      .MuiInputBase-input {
+        color: $light-1;
+      }
+      .MuiInput-underline:after,
+      .MuiInput-underline:before {
+        border-bottom: 1px solid white;
+      }
     }
     .form {
       width: 320;
@@ -97,16 +97,6 @@
     }
     .errorMessage {
       text-align: center;
-    }
-    .textFieldUnderline {
-      &:before {
-      }
-      &:after {
-      }
-      &:hover:before {
-      }
-    }
-    .textField {
     }
     .formButtons {
       width: 100%;

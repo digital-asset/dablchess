@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { TextField } from '@material-ui/core';
+import { Input } from '@material-ui/core';
 import { useLedger } from '@daml/react';
-import { useUserState } from '../../../../context/UserContext';
-import { useDefaultParties } from '../../../../context/DefaultPartiesContext';
-import { useAliasMaps } from '../../../../context/AliasMapContext';
-import useStyles from './styles';
+import { useUserState } from '../context/UserContext';
+import { useDefaultParties } from '../context/DefaultPartiesContext';
+import { useAliasMaps } from '../context/AliasMapContext';
 import { AliasRequest } from '@daml-ts/chess-0.5.0/lib/Alias';
+import { IconButton } from '@material-ui/core';
+import { Edit, Close } from '@material-ui/icons';
 
 export default function AliasField() {
-  const classes = useStyles();
   const defaultParties = useDefaultParties();
   const ledger = useLedger();
-  const [alias, setAlias] = useState<string>('');
+  const [alias, setAlias] = useState<string>();
+  const [editing, setEditing] = useState(false);
   const aliasMap = useAliasMaps();
   const userState = useUserState();
+
   useEffect(() => {
     if (userState.isAuthenticated) {
       setAlias(aliasMap.toAlias(userState.party));
@@ -37,27 +39,38 @@ export default function AliasField() {
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
       onAliasEnter((event.target as HTMLInputElement).value);
+      setEditing(false);
     }
   }
+
+  if (editing) {
+    return (
+      <div>
+        <div className="alias-form">
+          <p>User Alias:</p>
+          &nbsp;
+          <Input
+            id="alias"
+            placeholder="Enter an alias to for easier identification."
+            value={alias}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+          />
+          <IconButton onClick={() => setEditing(false)}>
+            <Close />
+          </IconButton>
+        </div>
+        <p className="p2">Enter an alias to for easier identification.</p>
+      </div>
+    );
+  }
+
   return (
-    <TextField
-      id="alias"
-      InputProps={{
-        classes: {
-          input: classes.lightTextField,
-          root: classes.root,
-        },
-      }}
-      FormHelperTextProps={{
-        className: classes.formHelperText,
-      }}
-      className={classes.lightTextField}
-      label="Alias"
-      helperText="Enter an alias to for easier identification."
-      // How can I create the effect that this alias has been set?
-      value={alias}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-    />
+    <p>
+      User Alias: {alias}
+      <IconButton onClick={() => setEditing(true)}>
+        <Edit />
+      </IconButton>
+    </p>
   );
 }

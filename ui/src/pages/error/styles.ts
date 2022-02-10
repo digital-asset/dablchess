@@ -22,11 +22,6 @@ export default makeStyles((theme: any) =>
         display: 'none',
       },
     },
-    logotypeText: {
-      fontWeight: 500,
-      color: theme.palette.primary.main,
-      marginLeft: theme.spacing(2),
-    },
     logotypeIcon: {
       width: 70,
       marginRight: theme.spacing(2),

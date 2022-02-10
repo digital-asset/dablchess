@@ -1,0 +1,62 @@
+@mixin header-nav {
+  .header-nav {
+    background-color: $light-2;
+    width: 100vw;
+
+    .toolbar {
+      display: flex;
+      flex-direction: column;
+      margin: $spacing-m $spacing-s $spacing-s $spacing-s;
+
+      .app-info {
+        display: flex;
+        flex-direction: column;
+        width: 70%;
+        margin-left: $spacing-s;
+      }
+    }
+
+    .header-info {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      width: 100%;
+      &.controls {
+        justify-content: space-between;
+        margin-top: $spacing-m;
+      }
+      .exit-button {
+        margin-left: auto;
+        align-self: flex-start;
+      }
+      .alias-form {
+        display: flex;
+        flex-direction: row;
+        align-items: baseline;
+
+        input {
+          color: $text-color;
+          border-bottom: none;
+        }
+      }
+    }
+
+    .headerMenu {
+      margin-top: $spacing-l;
+    }
+
+    .headerMenuButton {
+      margin-left: $spacing-s;
+      padding: $spacing-s;
+    }
+
+    .headerIcon {
+      font-size: 28;
+    }
+
+    .newGameButton {
+      size: small;
+      margin-right: $spacing-s;
+    }
+  }
+}

@@ -1,0 +1,38 @@
+@mixin contracts {
+  .contracts {
+    margin: $spacing-m;
+
+    .empty-table {
+      width: 100%;
+      height: 40%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      button {
+        background-color: $theme-color;
+      }
+    }
+
+    .table-actions {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      button {
+        margin: $spacing-m 0;
+      }
+    }
+
+    .tableCell {
+      vertical-align: 'top';
+      padding-top: 6;
+      padding-bottom: 6;
+      font-size: '0.75rem';
+    }
+    .tableRow {
+      height: 'auto';
+    }
+    .textField {
+      font-size: '0.75rem';
+    }
+  }
+}

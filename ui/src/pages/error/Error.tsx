@@ -16,9 +16,7 @@ export default function Error() {
     <Grid container className={classes.container}>
       <div className={classes.logotype}>
         <img className={classes.logotypeIcon} src={logo} alt="logo" />
-        <Typography variant="h3" className={classes.logotypeText}>
-          Daml Chess
-        </Typography>
+        <Typography variant="h3">Daml Chess</Typography>
       </div>
       <Paper classes={{ root: classes.paperRoot }}>
         <Typography variant="h1" color="primary" className={classnames(classes.textRow, classes.errorCode)}>

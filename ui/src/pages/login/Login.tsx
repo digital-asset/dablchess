@@ -2,24 +2,10 @@ import React, { useState } from 'react';
 import { Grid, CircularProgress, Typography, Button, TextField, Fade } from '@material-ui/core';
 import {} from 'react-router-dom';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
-import logo from './logo.svg';
+import { Logo } from '../../components/Logo';
 import { useUserDispatch, loginUser, loginDamlHubUser } from '../../context/UserContext';
 import { isLocalDev } from '../../config';
-
-const classes = {
-  container: 'container',
-  logotypeContainer: 'logotypeContainer',
-  logotypeImage: 'logotypeImage',
-  logotypeText: 'logotypeText',
-  formContainer: 'formContainer',
-  form: 'form',
-  errorMessage: 'errorMessage',
-  damlHubLoginButton: 'damlHubLoginButton',
-  textFieldUnderline: 'textFieldUnderline',
-  formButtons: 'formButtons',
-  loginLoader: 'loginLoader',
-  textField: 'textField',
-};
+import { classes } from '../../components/classes';
 
 function Login({ history }: RouteComponentProps<any>) {
   // global
@@ -34,8 +20,8 @@ function Login({ history }: RouteComponentProps<any>) {
   return (
     <Grid container className={'login'}>
       <div className={classes.logotypeContainer}>
-        <img src={logo} alt="logo" className={classes.logotypeImage} />
-        <Typography className={classes.logotypeText}>Daml Chess</Typography>
+        <Logo />
+        <Typography variant="h1">Daml Chess</Typography>
       </div>
       <div className={classes.formContainer}>
         <div className={classes.form}>
