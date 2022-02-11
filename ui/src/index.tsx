@@ -6,13 +6,17 @@ import { CssBaseline } from '@material-ui/core';
 import Themes from './themes';
 import App from './components/App';
 import { UserProvider } from './context/UserContext';
+import { MessagesProvider } from './context/MessagesContext';
+
 import './index.scss';
 
 ReactDOM.render(
   <UserProvider>
     <ThemeProvider theme={Themes.default}>
-      <CssBaseline />
-      <App />
+      <MessagesProvider>
+        <CssBaseline />
+        <App />
+      </MessagesProvider>
     </ThemeProvider>
   </UserProvider>,
   document.getElementById('root')

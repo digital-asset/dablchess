@@ -15,7 +15,7 @@ function Login({ history }: RouteComponentProps<any>) {
   var [isLoading, setIsLoading] = useState<boolean>(false);
   var [error, setError] = useState(false);
   var [loginValue, setLoginValue] = useState<string>('');
-  var [passwordValue, setPasswordValue] = useState<string>('');
+  var [passwordValue, setPasswordValue] = useState<string>();
 
   return (
     <Grid container className={'login'}>
@@ -47,17 +47,11 @@ function Login({ history }: RouteComponentProps<any>) {
             )}
             <TextField
               id="email"
-              InputProps={{
-                classes: {
-                  underline: classes.textFieldUnderline,
-                  input: classes.textField,
-                },
-              }}
               value={loginValue}
               onChange={(e) => setLoginValue(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  loginUser(userDispatch, loginValue, passwordValue, history, setIsLoading, setError);
+                  loginUser(userDispatch, loginValue, history, setIsLoading, setError, passwordValue);
                 }
               }}
               margin="normal"
@@ -65,33 +59,29 @@ function Login({ history }: RouteComponentProps<any>) {
               type="email"
               fullWidth
             />
-            <TextField
-              id="password"
-              InputProps={{
-                classes: {
-                  underline: classes.textFieldUnderline,
-                  input: classes.textField,
-                },
-              }}
-              value={passwordValue}
-              onChange={(e) => setPasswordValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  loginUser(userDispatch, loginValue, passwordValue, history, setIsLoading, setError);
-                }
-              }}
-              margin="normal"
-              placeholder="Password"
-              type="password"
-              fullWidth
-            />
+            {!isLocalDev && (
+              <TextField
+                id="password"
+                value={passwordValue}
+                onChange={(e) => setPasswordValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    loginUser(userDispatch, loginValue, history, setIsLoading, setError, passwordValue);
+                  }
+                }}
+                margin="normal"
+                placeholder="Password"
+                type="password"
+                fullWidth
+              />
+            )}
             <div className={classes.formButtons}>
               {isLoading ? (
                 <CircularProgress size={26} className={classes.loginLoader} />
               ) : (
                 <Button
                   disabled={loginValue.length === 0}
-                  onClick={() => loginUser(userDispatch, loginValue, passwordValue, history, setIsLoading, setError)}
+                  onClick={() => loginUser(userDispatch, loginValue, history, setIsLoading, setError, passwordValue)}
                   variant="contained"
                   color="primary"
                   size="large"

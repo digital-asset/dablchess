@@ -6,7 +6,7 @@
     .toolbar {
       display: flex;
       flex-direction: column;
-      margin: $spacing-m $spacing-s $spacing-s $spacing-s;
+      padding: $spacing-m $spacing-m $spacing-s $spacing-m;
 
       .app-info {
         display: flex;
@@ -33,11 +33,6 @@
         display: flex;
         flex-direction: row;
         align-items: baseline;
-
-        input {
-          color: $text-color;
-          border-bottom: none;
-        }
       }
     }
 
