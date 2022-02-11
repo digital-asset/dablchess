@@ -28,7 +28,6 @@ export default function App() {
     var userDispatch = useUserDispatch();
 
     useEffect(() => {
-      const url = new URL(window.location.toString());
       const tokenCookiePair =
         document.cookie.split('; ').find((row) => row.startsWith('DAMLHUB_LEDGER_ACCESS_TOKEN')) || '';
       const tokenCookieSecret = tokenCookiePair.slice(tokenCookiePair.indexOf('=') + 1);

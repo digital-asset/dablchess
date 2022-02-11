@@ -8,15 +8,15 @@ import {
   DialogTitle,
   FormControl,
   FormControlLabel,
-  FormLabel,
   Radio,
   RadioGroup,
-  TextField,
+  Input,
+  Typography,
 } from '@material-ui/core';
 import { Autocomplete } from '@material-ui/lab';
-import { useUserState } from '../../../../context/UserContext';
-import { useDefaultParties } from '../../../../context/DefaultPartiesContext';
-import { useAliasMaps } from '../../../../context/AliasMapContext';
+import { useUserState } from '../context/UserContext';
+import { useDefaultParties } from '../context/DefaultPartiesContext';
+import { useAliasMaps } from '../context/AliasMapContext';
 import { GameProposal } from '@daml-ts/chess-0.5.0/lib/Chess';
 import { Side } from '@daml-ts/chess-0.5.0/lib/Types';
 
@@ -51,7 +51,9 @@ export default function NewGameDialog({ open, handleClose }: NewGameDialogProp) 
       let gameProposalPromise = await ledger.create(GameProposal, args);
       console.log('We created a game: ' + JSON.stringify(gameProposalPromise));
     } catch (error) {
-      alert('Error creating a gameProposal' + error + ' ' + JSON.stringify(args));
+      alert(
+        'Error creating a gameProposal: \n' + error['errors'].join('. ') + ' \n With payload: \n' + JSON.stringify(args)
+      );
     }
   }
 
@@ -80,39 +82,44 @@ export default function NewGameDialog({ open, handleClose }: NewGameDialogProp) 
   return (
     <div>
       <Dialog open={open} onClose={() => onClose(false)} aria-labelledby="form-dialog-title">
-        <DialogTitle id="form-dialog-title">Propose a game</DialogTitle>
+        <DialogTitle id="form-dialog-title">
+          <Typography variant="h2" id="form-dialog-title">
+            Propose a game
+          </Typography>
+        </DialogTitle>
+
         <DialogContent>
-          <TextField
+          <p>Game Id:</p>
+          <Input
             autoFocus={true}
             margin="dense"
             id="gameId"
             placeholder="Enter a unique id"
-            label="Game Id"
             fullWidth
             onChange={(e) => setGameId(e.target.value)}
           />
           <Autocomplete
             id="opponent-autocomplete"
-            //autoComplete={true}
             options={aliasesAsArray}
             getOptionLabel={handleGetOptionLabel}
-            // Allow the user to request games against arbitrary players.
             freeSolo
             disableClearable
             renderInput={(params) => (
-              <TextField
-                {...params}
-                margin="dense"
-                id="opponent"
-                placeholder="Who do you want to play against?"
-                label="Opponent"
-                fullWidth
-                onChange={handleChangeAutocompleteTextField}
-              />
+              <>
+                <p>Opponent:</p>
+                <Input
+                  {...params}
+                  margin="dense"
+                  id="opponent"
+                  placeholder="Who do you want to play against?"
+                  fullWidth
+                  onChange={handleChangeAutocompleteTextField}
+                />
+              </>
             )}
           />
           <FormControl component="fieldset">
-            <FormLabel component="legend">Desired Side</FormLabel>
+            <p>Desired Side:</p>
             <RadioGroup
               aria-label="desired side"
               name="desiredSide"
@@ -125,9 +132,7 @@ export default function NewGameDialog({ open, handleClose }: NewGameDialogProp) 
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => onClose(true)} color="primary">
-            Propose New Game
-          </Button>
+          <Button onClick={() => onClose(true)}>Propose New Game</Button>
         </DialogActions>
       </Dialog>
     </div>

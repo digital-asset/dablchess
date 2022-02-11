@@ -2,7 +2,6 @@ import React from 'react';
 import { CreateEvent } from '@daml/ledger';
 import { useLedger } from '@daml/react';
 import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell, TableBody } from '@material-ui/core';
-import { useStyles } from './styles';
 import {
   ActiveSideOfGame,
   DrawRequest,
@@ -15,6 +14,15 @@ import { Side } from '@daml-ts/chess-0.5.0/lib/Types';
 import { useUserState } from '../../context/UserContext';
 import { useAliasMaps } from '../../context/AliasMapContext';
 import ChessBoardDialog from './components/ChessBoardDialog/ChessBoardDialog';
+import { classes } from '../classes';
+import { Refresh } from '@material-ui/icons';
+import { useReload } from '@daml/react';
+import NewGameDialog from '../NewGameDialog';
+
+type NewGameButtonProp = {
+  text: string;
+  onClick: () => void;
+};
 
 type MyButtonProp = {
   text: any;
@@ -50,7 +58,6 @@ function GameProposalRow({ createGp }: GameProposalRowProp) {
   console.log(`Converting a gameProposal ${createGp.contractId}.`);
   let gp = createGp.payload;
 
-  const classes = useStyles();
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
   const userState = useUserState();
@@ -91,7 +98,6 @@ function ActiveSideOfGameRow({ createAs }: ActiveSideofGameRowProp) {
   console.log(`Converting an active side of game ${createAs.contractId}.`);
   let ap = createAs.payload;
 
-  const classes = useStyles();
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
   const [openChessBoard, setOpenChessBoard] = React.useState(false);
@@ -164,7 +170,6 @@ function PassiveSideOfGameRow({ createPs }: PassiveSideOfGameRowProp) {
   console.log(`Converting an passive side of game ${createPs.contractId}.`);
   let pp = createPs.payload;
 
-  const classes = useStyles();
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
 
@@ -232,7 +237,6 @@ function DrawRequestRow({ createDr }: DrawRequestRowProp) {
   console.log(`Converting an draw request ${createDr.contractId}.`);
   let dp = createDr.payload;
 
-  const classes = useStyles();
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
   const userState = useUserState();
@@ -275,7 +279,6 @@ type GameResultRowProp = {
 function GameResultRow({ createGr }: GameResultRowProp) {
   console.log(`Converting a gameResult ${createGr.contractId}.`);
 
-  const classes = useStyles();
   const userState = useUserState();
   const aliasMap = useAliasMaps();
   if (!userState.isAuthenticated) {
@@ -339,10 +342,24 @@ export default function Contracts({
   drawRequests,
   gameResults,
 }: ContractsProp<any, any>) {
-  const classes = useStyles();
+  const reload = useReload();
+  const tableIsEmpty =
+    gameProposals.length === 0 &&
+    activeGames.length === 0 &&
+    passiveGames.length === 0 &&
+    drawRequests.length === 0 &&
+    gameResults.length === 0;
+
+  const [newGameDialogOpen, setOpenNewGameDialog] = React.useState<boolean>(tableIsEmpty);
 
   return (
-    <>
+    <div className="contracts">
+      <div className="table-actions">
+        <NewGameButton text="New Game" onClick={() => setOpenNewGameDialog(true)} />
+        <Button onClick={reload}>
+          <Refresh classes={{ root: classes.headerIcon }} /> &nbsp; Refresh
+        </Button>
+      </div>
       <Grid container spacing={4}>
         <Grid item xs={12}>
           <Table size="small">
@@ -374,6 +391,15 @@ export default function Contracts({
           </Table>
         </Grid>
       </Grid>
-    </>
+      <NewGameDialog open={newGameDialogOpen} handleClose={() => setOpenNewGameDialog(false)} />
+    </div>
+  );
+}
+
+function NewGameButton({ text, onClick }: NewGameButtonProp) {
+  return (
+    <Button className="new-game" variant="contained" onClick={onClick}>
+      {text}
+    </Button>
   );
 }

@@ -1,15 +1,36 @@
 @import './pages/login/Login.scss';
+@import './components/Header/Header.scss';
+@import './components/Contracts/Contracts.scss';
+@import './pages/error/Error.scss';
 
-$light-theme: #ddc3a5;
-$dark-theme: #201e20;
-$medium-theme: #e0a96d;
-$text-color: $dark-theme;
+$light-1: #fff4f4;
+$light-2: #ffdada;
+$light-3: #ffc1c1;
+$light-4: #ffa8a8;
+$light-5: #ff8e8e;
+$light-5: #ff7575;
+
+$dark-1: #0e0000;
+$dark-2: #270000;
+$dark-3: #410000;
+$dark-4: #5a0000;
+$dark-5: #740000;
+$dark-6: #8d0000;
+$dark-6: #a70f0f;
+$dark-6: #c02828;
+$dark-6: #da4242;
+
+$text-color: $dark-2;
+$theme-color: #f35b5b;
+$disabled-color: #b9bcc6;
+
+$spacing-xs: 6px;
 
 $spacing-s: 12px;
-
 $spacing-m: 24px;
-
 $spacing-l: 36px;
+
+$font-regular: 'Zen Kaku Gothic Antique', sans-serif;
 
 html {
   height: 100vh;
@@ -23,13 +44,86 @@ html {
   body {
     height: inherit;
     margin: 0;
+    font-family: $font-regular;
+
+    .MuiInputBase-input {
+      color: $text-color;
+    }
+    .MuiInput-underline:after,
+    .MuiInput-underline:before {
+      border-bottom: 1px solid $text-color;
+    }
+
+    .MuiDialog-paper {
+      width: 900px;
+      padding: $spacing-s;
+    }
+
+    .MuiPaper-elevation4 {
+      box-shadow: none;
+    }
+
+    .makeStyles-root-12 {
+      flex-direction: column;
+    }
 
     #root {
       height: inherit;
       width: inherit;
-    
+      background-color: $light-1;
+      display: flex;
+      flex-direction: column;
       @include login;
+      @include header-nav;
+      @include contracts;
+      @include error-page;
 
+      .makeStyles-root-1 {
+        flex-direction: column;
+      }
+      .makeStyles-content-2 {
+        width: 100%;
+      }
+      .MuiSvgIcon-root {
+        width: 16px;
+        height: 16px;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      p {
+        color: $text-color;
+        font-family: $font-regular;
+      }
+      p {
+        font-size: 16px;
+        margin-block-start: 2px;
+        margin-block-end: 2px;
+        &.p2 {
+          font-size: 14px;
+        }
+      }
+
+      button {
+        color: $text-color;
+        font-family: $font-regular;
+        background-color: $light-1;
+        border: 1px solid $light-4;
+        box-shadow: none;
+        &.MuiIconButton-root {
+          border-radius: 4px;
+          border: 1px solid $light-4;
+          padding: 2px;
+          margin-left: $spacing-xs;
+        }
+        &.MuiButton-contained.Mui-disabled {
+          background-color: transparent;
+          color: $disabled-color;
+          border-color: $disabled-color;
+        }
+      }
     }
   }
 }

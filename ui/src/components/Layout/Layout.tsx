@@ -1,6 +1,5 @@
 import React from 'react';
 import { Route, Switch, withRouter } from 'react-router-dom';
-import classnames from 'classnames';
 import useStyles from './styles';
 import Header from '../Header/Header';
 import GamesTable from '../../pages/games-table/GamesTable';
@@ -13,6 +12,7 @@ import { wsBaseUrl, httpBaseUrl } from '../../config';
 function Layout() {
   const classes = useStyles();
   const user = useUserState();
+
   if (!user.isAuthenticated) {
     return null;
   }
@@ -22,15 +22,12 @@ function Layout() {
       <DefaultPartiesProvider>
         <AliasMapProvider>
           <div className={classes.root}>
-            <>
-              <Header />
-              <div className={classnames(classes.content, { [classes.contentShift]: false })}>
-                <div className={classes.fakeToolbar} />
-                <Switch>
-                  <Route path="/app/games-table" component={GamesTable} />
-                </Switch>
-              </div>
-            </>
+            <Header />
+            <div>
+              <Switch>
+                <Route path="/app/games-table" component={GamesTable} />
+              </Switch>
+            </div>
           </div>
         </AliasMapProvider>
       </DefaultPartiesProvider>
