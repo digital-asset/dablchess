@@ -87,7 +87,6 @@ function loginUser(
 ): void {
   setError(false);
   setIsLoading(true);
-  console.log('WHERSKDNASDLNASLNDIOSHDIPAHSDIHASIODNASDASDASDASD', userToken);
 
   if (!!party) {
     const token = userToken || createToken(party);
