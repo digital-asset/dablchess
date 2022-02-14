@@ -90,8 +90,6 @@ function loginUser(
 
   if (!!party) {
     const token = userToken || createToken(party);
-    console.log(token);
-
     localStorage.setItem('daml.party', party);
     localStorage.setItem('daml.token', token);
     dispatch({ type: 'LOGIN_SUCCESS', token, party });
