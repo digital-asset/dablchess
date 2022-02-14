@@ -23,4 +23,7 @@ export const classes = {
   safetyText: 'safetyText',
   errorCode: 'errorCode',
   backButton: 'backButton',
+  root: 'root',
+  checkedBoardDiv: 'checkedBoardDiv',
+  regularBoardDiv: 'regularBoardDiv',
 };

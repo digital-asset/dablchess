@@ -1,6 +1,7 @@
 @import './pages/login/Login.scss';
 @import './components/Header/Header.scss';
 @import './components/Contracts/Contracts.scss';
+@import './pages/game/Game.scss';
 @import './pages/error/Error.scss';
 
 $light-1: #fff4f4;
@@ -23,6 +24,8 @@ $dark-6: #da4242;
 $text-color: $dark-2;
 $theme-color: #f35b5b;
 $disabled-color: #b9bcc6;
+
+$green-1: green;
 
 $spacing-xs: 6px;
 
@@ -57,14 +60,35 @@ html {
     .MuiDialog-paper {
       width: 900px;
       padding: $spacing-s;
+      background-color: $light-1;
     }
 
     .MuiPaper-elevation4 {
       box-shadow: none;
     }
+    .MuiSnackbar-root {
+      max-width: 60%;
+    }
+    .MuiSnackbar-root.MuiSnackbar-anchorOriginTopRight {
+      padding: $spacing-s;
+      background-color: $light-1;
+      border: 1px solid $light-2;
+      border-radius: 4px;
 
-    .makeStyles-root-12 {
-      flex-direction: column;
+      &.error {
+        border: 1px solid $light-5;
+      }
+      &.success {
+        border: 1px solid $green-1;
+      }
+
+      .heading {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        width: 100%;
+        justify-content: space-between;
+      }
     }
 
     #root {
@@ -73,17 +97,22 @@ html {
       background-color: $light-1;
       display: flex;
       flex-direction: column;
+
       @include login;
       @include header-nav;
       @include contracts;
       @include error-page;
+      @include game;
 
-      .makeStyles-root-1 {
-        flex-direction: column;
-      }
-      .makeStyles-content-2 {
+      .loading-contracts {
         width: 100%;
+        height: 50%;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        margin-top: 250px;
       }
+
       .MuiSvgIcon-root {
         width: 16px;
         height: 16px;
@@ -93,7 +122,9 @@ html {
       h2,
       h3,
       h4,
-      p {
+      h5,
+      p,
+      input {
         color: $text-color;
         font-family: $font-regular;
       }
@@ -106,20 +137,22 @@ html {
         }
       }
 
+      a,
       button {
         color: $text-color;
         font-family: $font-regular;
         background-color: $light-1;
         border: 1px solid $light-4;
         box-shadow: none;
+
         &.MuiIconButton-root {
           border-radius: 4px;
           border: 1px solid $light-4;
           padding: 2px;
           margin-left: $spacing-xs;
         }
+
         &.MuiButton-contained.Mui-disabled {
-          background-color: transparent;
           color: $disabled-color;
           border-color: $disabled-color;
         }

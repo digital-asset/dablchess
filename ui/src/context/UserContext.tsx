@@ -1,6 +1,6 @@
 import React from 'react';
 import { History } from 'history';
-import { createToken, damlHubLoginUrl } from '../config';
+import { createToken, damlHubLoginUrl, isLocalDev } from '../config';
 
 type LoggedOutUser = {
   isAuthenticated: false;
@@ -80,10 +80,10 @@ function useUserDispatch() {
 function loginUser(
   dispatch: React.Dispatch<LoginAction>,
   party: string,
-  userToken: string,
   history: History,
   setIsLoading: (arg0: boolean) => void,
-  setError: (arg0: boolean) => void
+  setError: (arg0: boolean) => void,
+  userToken?: string
 ): void {
   setError(false);
   setIsLoading(true);

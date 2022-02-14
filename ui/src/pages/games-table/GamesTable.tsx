@@ -8,14 +8,28 @@ import {
   GameResult,
   PassiveSideOfGame,
 } from '@daml-ts/chess-0.5.0/lib/Chess';
+import { CircularProgress } from '@material-ui/core';
 
 export default function GamesTable() {
-  const gameProposals = useStreamQuery(GameProposal).contracts;
-  const activeGames = useStreamQuery(ActiveSideOfGame).contracts;
-  const passiveGames = useStreamQuery(PassiveSideOfGame).contracts;
-  const drawRequests = useStreamQuery(DrawRequest).contracts;
-  const gameResults = useStreamQuery(GameResult).contracts;
-
+  const { loading: loadingGameProposals, contracts: gameProposals } = useStreamQuery(GameProposal);
+  const { loading: loadingActiveGames, contracts: activeGames } = useStreamQuery(ActiveSideOfGame);
+  const { loading: loadingPassiveGames, contracts: passiveGames } = useStreamQuery(PassiveSideOfGame);
+  const { loading: loadingDrawRequests, contracts: drawRequests } = useStreamQuery(DrawRequest);
+  const { loading: loadingGameRequests, contracts: gameResults } = useStreamQuery(GameResult);
+  if (
+    loadingGameProposals ||
+    loadingActiveGames ||
+    loadingPassiveGames ||
+    loadingDrawRequests ||
+    loadingGameProposals ||
+    loadingGameRequests
+  ) {
+    return (
+      <div className="loading-contracts">
+        <CircularProgress color={'inherit'} /> <p>Loading contracts...</p>
+      </div>
+    );
+  }
   return (
     <Contracts
       gameProposals={gameProposals}

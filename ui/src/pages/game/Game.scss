@@ -1,0 +1,10 @@
+@mixin game {
+  .game {
+    margin: $spacing-m;
+    .game-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+}

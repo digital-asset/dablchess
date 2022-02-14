@@ -13,11 +13,11 @@ import {
 import { Side } from '@daml-ts/chess-0.5.0/lib/Types';
 import { useUserState } from '../../context/UserContext';
 import { useAliasMaps } from '../../context/AliasMapContext';
-import ChessBoardDialog from './components/ChessBoardDialog/ChessBoardDialog';
 import { classes } from '../classes';
 import { Refresh } from '@material-ui/icons';
 import { useReload } from '@daml/react';
 import NewGameDialog from '../NewGameDialog';
+import { useHistory } from 'react-router-dom';
 
 type NewGameButtonProp = {
   text: string;
@@ -49,7 +49,36 @@ function side(g: Game | GameResult, party: string): string {
   return g.proposer === party ? g.desiredSide : otherSide(g.desiredSide);
 }
 
+const GameIdCell = (props: { id: string }) => {
+  return (
+    <TableCell className={classes.tableCell}>
+      <p>{props.id}</p>
+    </TableCell>
+  );
+};
+
+const SideCell = (props: { side: string }) => {
+  return (
+    <TableCell className={classes.tableCell}>
+      <p className={props.side.toLocaleLowerCase()}>{props.side}</p>
+    </TableCell>
+  );
+};
+
+const OpponentCell = (props: { opponent: string }) => {
+  return (
+    <TableCell className={classes.tableCell}>
+      <p>{props.opponent}</p>
+    </TableCell>
+  );
+};
+
+const StatusCell = (props: { status?: string }) => {
+  return <TableCell className={classes.tableCell}>{props.status && <p>{props.status}</p>}</TableCell>;
+};
+
 type CreateEvent_<T extends object> = CreateEvent<T, any, any>;
+
 type GameProposalRowProp = {
   createGp: CreateEvent_<GameProposal>;
 };
@@ -72,20 +101,19 @@ function GameProposalRow({ createGp }: GameProposalRowProp) {
 
   return (
     <TableRow className={classes.tableRow}>
-      <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
-      <TableCell className={classes.tableCell}>{gp.desiredSide}</TableCell>
-      <TableCell className={classes.tableCell}>
-        {aliasMap.toAlias(userState.party === gp.opponent ? gp.proposer : gp.opponent)}
+      <GameIdCell id={gp.gameId} />
+      <SideCell side={gp.desiredSide} />
+      <OpponentCell opponent={aliasMap.toAlias(userState.party === gp.opponent ? gp.proposer : gp.opponent)} />
+      <StatusCell
+        status={
+          userState.party !== gp.opponent
+            ? `Waiting for ${aliasMap.toAlias(gp.opponent)} to accept game request...`
+            : `${aliasMap.toAlias(gp.opponent)} sent you a request to play chess!`
+        }
+      />
+      <TableCell className={classes.tableCell} align="right">
+        {userState.party === gp.opponent && <MyButton text="Accept" onClick={acceptGameProposal} />}
       </TableCell>
-      {userState.party === gp.opponent ? (
-        <TableCell className={classes.tableCell}>
-          <MyButton text="Accept" onClick={acceptGameProposal} />
-        </TableCell>
-      ) : (
-        <TableCell className={classes.tableCell}>
-          Waiting for {aliasMap.toAlias(gp.opponent)} to accept game request.
-        </TableCell>
-      )}
     </TableRow>
   );
 }
@@ -97,17 +125,12 @@ type ActiveSideofGameRowProp = {
 function ActiveSideOfGameRow({ createAs }: ActiveSideofGameRowProp) {
   console.log(`Converting an active side of game ${createAs.contractId}.`);
   let ap = createAs.payload;
-
+  const history = useHistory();
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
-  const [openChessBoard, setOpenChessBoard] = React.useState(false);
-
-  function handleClose() {
-    setOpenChessBoard(false);
-  }
 
   function move() {
-    setOpenChessBoard(true);
+    history.push(`/app/game/${encodeURIComponent(createAs.contractId)}`);
   }
 
   async function claimDraw() {
@@ -138,18 +161,12 @@ function ActiveSideOfGameRow({ createAs }: ActiveSideofGameRowProp) {
 
   return (
     <>
-      <ChessBoardDialog
-        open={openChessBoard}
-        side={ap.side}
-        onClose={handleClose}
-        game={ap.active}
-        c={{ kind: 'active', contractId: createAs.contractId }}
-      />
       <TableRow className={classes.tableRow}>
-        <TableCell className={classes.tableCell}>{ap.game.gameId}</TableCell>
-        <TableCell className={classes.tableCell}>{ap.side}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent(ap.game, ap.player))}</TableCell>
-        <TableCell className={classes.tableCell}>
+        <GameIdCell id={ap.game.gameId} />
+        <SideCell side={ap.side} />
+        <OpponentCell opponent={aliasMap.toAlias(opponent(ap.game, ap.player))} />
+        <StatusCell />
+        <TableCell className={classes.tableCell} align="right">
           <ButtonGroup>
             <MyButton text="Move" onClick={move} />
             <MyButton text="Claim Draw" onClick={claimDraw} />
@@ -206,19 +223,12 @@ function PassiveSideOfGameRow({ createPs }: PassiveSideOfGameRowProp) {
   const opponent_ = opponent(pp.game, pp.player); // Ideally this should be userState.party, but we'll save a React state.
   return (
     <>
-      <ChessBoardDialog
-        open={openChessBoard}
-        side={pp.side}
-        onClose={handleClose}
-        game={pp.passive}
-        c={{ kind: 'passive', contractId: createPs.contractId }}
-      />
       <TableRow className={classes.tableRow} onClick={onClick}>
-        <TableCell className={classes.tableCell}>{pp.game.gameId}</TableCell>
-        <TableCell className={classes.tableCell}>{side(pp.game, pp.player)}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent_)}</TableCell>
-        <TableCell className={classes.tableCell}>
-          Waiting for {aliasMap.toAlias(opponent_)}'s move.
+        <GameIdCell id={pp.game.gameId} />
+        <SideCell side={side(pp.game, pp.player)} />
+        <OpponentCell opponent={aliasMap.toAlias(opponent_)} />
+        <StatusCell status={`Waiting for ${aliasMap.toAlias(opponent_)}'s move...`} />
+        <TableCell className={classes.tableCell} align="right">
           <ButtonGroup>
             <MyButton text="Request Draw" onClick={requestDraw} />
             <MyButton text="Surrender" onClick={surrender} />
@@ -254,19 +264,21 @@ function DrawRequestRow({ createDr }: DrawRequestRowProp) {
   return (
     <>
       <TableRow className={classes.tableRow}>
-        <TableCell className={classes.tableCell}>{dp.game.gameId}</TableCell>
-        <TableCell className={classes.tableCell}>{side(dp.game, userState.party)}</TableCell>
-        <TableCell className={classes.tableCell}>{aliasMap.toAlias(opponent_)}</TableCell>
-        {userState.party === dp.player ? ( // Who made this draw request
-          <TableCell className={classes.tableCell}>You requested a draw.</TableCell>
-        ) : (
-          <TableCell className={classes.tableCell}>
-            {aliasMap.toAlias(dp.player)} requested a draw:
+        <GameIdCell id={dp.game.gameId} />
+        <SideCell side={side(dp.game, userState.party)} />
+        <OpponentCell opponent={aliasMap.toAlias(opponent_)} />
+        <StatusCell
+          status={
+            userState.party === dp.player ? 'You requested a draw' : `${aliasMap.toAlias(dp.player)} requested a draw.`
+          }
+        />
+        <TableCell className={classes.tableCell} align="right">
+          {userState.party !== dp.player && (
             <ButtonGroup>
               <MyButton text="Accept" onClick={accept} />
             </ButtonGroup>
-          </TableCell>
-        )}
+          )}
+        </TableCell>
       </TableRow>
     </>
   );
@@ -317,12 +329,13 @@ function GameResultRow({ createGr }: GameResultRowProp) {
 
   return (
     <TableRow className={classes.tableRow}>
-      <TableCell className={classes.tableCell}>{gp.gameId}</TableCell>
-      <TableCell className={classes.tableCell}>{side(gp, userState.party)}</TableCell>
-      <TableCell className={classes.tableCell}>
-        {gp.opponent === userState.party ? aliasMap.toAlias(gp.proposer) : aliasMap.toAlias(gp.opponent)}
-      </TableCell>
-      <TableCell className={classes.tableCell}>{gameState}</TableCell>
+      <GameIdCell id={gp.gameId} />
+      <SideCell side={side(gp, userState.party)} />
+      <OpponentCell
+        opponent={gp.opponent === userState.party ? aliasMap.toAlias(gp.proposer) : aliasMap.toAlias(gp.opponent)}
+      />
+      <StatusCell status={gameState} />
+      <TableCell className={classes.tableCell}></TableCell>
     </TableRow>
   );
 }
@@ -365,10 +378,19 @@ export default function Contracts({
           <Table size="small">
             <TableHead>
               <TableRow className={classes.tableRow}>
-                <TableCell className={classes.tableCell}>Game</TableCell>
-                <TableCell className={classes.tableCell}>Side</TableCell>
-                <TableCell className={classes.tableCell}>Opponent</TableCell>
-                <TableCell className={classes.tableCell}>State</TableCell>
+                <TableCell className={classes.tableCell}>
+                  <p>Game</p>
+                </TableCell>
+                <TableCell className={classes.tableCell}>
+                  <p>Side</p>
+                </TableCell>
+                <TableCell className={classes.tableCell}>
+                  <p>Opponent</p>
+                </TableCell>
+                <TableCell className={classes.tableCell}>
+                  <p>Status</p>
+                </TableCell>
+                <TableCell className={classes.tableCell}></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

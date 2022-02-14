@@ -2,23 +2,47 @@
   .contracts {
     margin: $spacing-m;
 
-    .empty-table {
-      width: 100%;
-      height: 40%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      button {
-        background-color: $theme-color;
-      }
-    }
-
     .table-actions {
       width: 100%;
       display: flex;
       justify-content: space-between;
       button {
         margin: $spacing-m 0;
+      }
+    }
+
+    table {
+      background-color: $light-4;
+      border-radius: 4px;
+      border-collapse: collapse;
+      .MuiTableCell-root {
+        border-bottom: none;
+      }
+      thead.tr {
+        background-color: $light-2;
+      }
+      tbody {
+        tr:nth-child(odd) {
+          background-color: $light-3;
+        }
+
+        tr {
+          td p {
+            &.white {
+              background-color: white;
+              width: 47px;
+              border-radius: 4px;
+              padding: 4px;
+            }
+            &.black {
+              background-color: black;
+              color: white;
+              width: 47px;
+              border-radius: 4px;
+              padding: 4px;
+            }
+          }
+        }
       }
     }
 

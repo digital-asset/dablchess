@@ -19,6 +19,7 @@ import { useDefaultParties } from '../context/DefaultPartiesContext';
 import { useAliasMaps } from '../context/AliasMapContext';
 import { GameProposal } from '@daml-ts/chess-0.5.0/lib/Chess';
 import { Side } from '@daml-ts/chess-0.5.0/lib/Types';
+import { useDisplayErrorMessage } from '../context/MessagesContext';
 
 type NewGameDialogProp = {
   open: boolean;
@@ -37,7 +38,7 @@ export default function NewGameDialog({ open, handleClose }: NewGameDialogProp) 
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
   const user = useUserState();
-
+  const displayError = useDisplayErrorMessage();
   if (!user.isAuthenticated) {
     return null;
   }
@@ -51,9 +52,10 @@ export default function NewGameDialog({ open, handleClose }: NewGameDialogProp) 
       let gameProposalPromise = await ledger.create(GameProposal, args);
       console.log('We created a game: ' + JSON.stringify(gameProposalPromise));
     } catch (error) {
-      alert(
-        'Error creating a gameProposal: \n' + error['errors'].join('. ') + ' \n With payload: \n' + JSON.stringify(args)
-      );
+      displayError({
+        header: 'Error creating a gameProposal',
+        message: error['errors'].join('. ') + ' \n With payload: \n' + JSON.stringify(args),
+      });
     }
   }
 
