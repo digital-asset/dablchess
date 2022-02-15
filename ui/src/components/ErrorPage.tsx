@@ -5,8 +5,8 @@ import { Logo } from './Logo';
 
 export default function Error() {
   return (
-    <Grid container className={'error-page'}>
-      <AppBar position={'static'} className={'header-nav'}>
+    <Grid container className="error-page">
+      <AppBar position={'static'} className="header-nav">
         <Toolbar className="toolbar">
           <div className="header-info">
             <Logo size="small" />

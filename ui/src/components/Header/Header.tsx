@@ -16,8 +16,8 @@ function Header({ history }: RouteComponentProps<any>) {
   }
 
   return (
-    <div className={'header-nav'}>
-      <Toolbar className={'toolbar'}>
+    <div className="header-nav">
+      <Toolbar className="toolbar">
         <div className="header-info">
           <Logo size="small" />
           <div className="app-info">

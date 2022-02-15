@@ -17,23 +17,23 @@ function Login({ history }: RouteComponentProps<any>) {
   var [passwordValue, setPasswordValue] = useState<string>();
 
   return (
-    <Grid container className={'login'}>
-      <div className={'logotypeContainer'}>
+    <Grid container className="login">
+      <div className="logotypeContainer">
         <Logo />
         <Typography variant="h1">Daml Chess</Typography>
       </div>
-      <div className={'formContainer'}>
-        <div className={'form'}>
+      <div className="formContainer">
+        <div className="form">
           <React.Fragment>
             <Fade in={error}>
-              <Typography color="secondary" className={'errorMessage'}>
+              <Typography color="secondary" className="errorMessage">
                 Something is wrong with your login or password :(
               </Typography>
             </Fade>
             {!isLocalDev && (
               <>
                 <Button
-                  className={'damlHubLoginButton'}
+                  className="damlHubLoginButton"
                   variant="contained"
                   color="primary"
                   size="large"
@@ -74,9 +74,9 @@ function Login({ history }: RouteComponentProps<any>) {
                 fullWidth
               />
             )}
-            <div className={'formButtons'}>
+            <div className="formButtons">
               {isLoading ? (
-                <CircularProgress size={26} className={'loginLoader'} />
+                <CircularProgress size={26} className="loginLoader" />
               ) : (
                 <Button
                   disabled={loginValue.length === 0}

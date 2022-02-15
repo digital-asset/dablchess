@@ -20,7 +20,7 @@ function Layout() {
     <DamlLedger party={user.party} token={user.token} httpBaseUrl={httpBaseUrl} wsBaseUrl={wsBaseUrl}>
       <DefaultPartiesProvider>
         <AliasMapProvider>
-          <div className={'root'}>
+          <div className="root">
             <Header />
             <div>
               <Switch>
