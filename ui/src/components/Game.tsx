@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useStreamQuery } from '@daml/react';
 import { ActiveSideOfGame, PassiveSideOfGame, Move } from '@daml-ts/chess-0.5.0/lib/Chess';
 import { CircularProgress } from '@material-ui/core';
 import Chessboard, { Piece as CPiece, Position } from 'chessboardjsx';
-import { Button, ButtonGroup, Tooltip, Select, Typography, MenuItem } from '@material-ui/core';
+import { Button, Tooltip, Select, Typography, MenuItem } from '@material-ui/core';
 import { ContractId } from '@daml/types';
 import { useLedger } from '@daml/react';
 import { Coord, Piece, PieceType, Side } from '@daml-ts/chess-0.5.0/lib/Types';

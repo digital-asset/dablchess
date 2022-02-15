@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Switch, withRouter } from 'react-router-dom';
 import Header from '../Header/Header';
-import GamesTable from '../../pages/games-table/GamesTable';
+import GamesTable from '../GamesTable';
 import Game from '../../pages/game/Game';
 import DamlLedger from '@daml/react';
 import { useUserState } from '../../context/UserContext';

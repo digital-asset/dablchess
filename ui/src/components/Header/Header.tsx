@@ -1,10 +1,9 @@
 import React from 'react';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
-import { AppBar, Button, Toolbar, Typography } from '@material-ui/core';
+import { Toolbar, Typography, Button } from '@material-ui/core';
 import { ExitToApp } from '@material-ui/icons';
 import { useUserDispatch, useUserState, signOut } from '../../context/UserContext';
 import AliasField from '../AliasField';
-import { classes } from './../classes';
 import { Logo } from '../Logo';
 
 function Header({ history }: RouteComponentProps<any>) {
@@ -18,7 +17,7 @@ function Header({ history }: RouteComponentProps<any>) {
 
   return (
     <div className={'header-nav'}>
-      <Toolbar className={classes.toolbar}>
+      <Toolbar className={'toolbar'}>
         <div className="header-info">
           <Logo size="small" />
           <div className="app-info">
@@ -31,7 +30,7 @@ function Header({ history }: RouteComponentProps<any>) {
             </p>
           </div>
           <Button className="exit-button" onClick={(event) => signOut(event, userDispatch, history)}>
-            <ExitToApp classes={{ root: classes.headerIcon }} /> &nbsp; Exit
+            <ExitToApp classes={{ root: 'headerIcon' }} /> &nbsp; Exit
           </Button>
         </div>
         <div className="header-info controls">

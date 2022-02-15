@@ -1,8 +1,8 @@
-@import './pages/login/Login.scss';
+@import './components/LoginPage.scss';
 @import './components/Header/Header.scss';
 @import './components/Contracts/Contracts.scss';
-@import './pages/game/Game.scss';
-@import './pages/error/Error.scss';
+@import './components/Game.scss';
+@import './components/ErrorPage.scss';
 
 $light-1: #fff4f4;
 $light-2: #ffdada;

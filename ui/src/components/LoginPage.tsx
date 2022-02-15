@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { Grid, CircularProgress, Typography, Button, TextField, Fade } from '@material-ui/core';
 import {} from 'react-router-dom';
 import { RouteComponentProps, withRouter } from 'react-router-dom';
-import { Logo } from '../../components/Logo';
-import { useUserDispatch, loginUser, loginDamlHubUser } from '../../context/UserContext';
-import { isLocalDev } from '../../config';
-import { classes } from '../../components/classes';
+import { Logo } from './Logo';
+import { useUserDispatch, loginUser, loginDamlHubUser } from '../context/UserContext';
+import { isLocalDev } from './../config';
 
 function Login({ history }: RouteComponentProps<any>) {
   // global
@@ -19,22 +18,22 @@ function Login({ history }: RouteComponentProps<any>) {
 
   return (
     <Grid container className={'login'}>
-      <div className={classes.logotypeContainer}>
+      <div className={'logotypeContainer'}>
         <Logo />
         <Typography variant="h1">Daml Chess</Typography>
       </div>
-      <div className={classes.formContainer}>
-        <div className={classes.form}>
+      <div className={'formContainer'}>
+        <div className={'form'}>
           <React.Fragment>
             <Fade in={error}>
-              <Typography color="secondary" className={classes.errorMessage}>
+              <Typography color="secondary" className={'errorMessage'}>
                 Something is wrong with your login or password :(
               </Typography>
             </Fade>
             {!isLocalDev && (
               <>
                 <Button
-                  className={classes.damlHubLoginButton}
+                  className={'damlHubLoginButton'}
                   variant="contained"
                   color="primary"
                   size="large"
@@ -75,9 +74,9 @@ function Login({ history }: RouteComponentProps<any>) {
                 fullWidth
               />
             )}
-            <div className={classes.formButtons}>
+            <div className={'formButtons'}>
               {isLoading ? (
-                <CircularProgress size={26} className={classes.loginLoader} />
+                <CircularProgress size={26} className={'loginLoader'} />
               ) : (
                 <Button
                   disabled={loginValue.length === 0}

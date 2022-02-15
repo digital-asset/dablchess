@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { HashRouter, Redirect, Route, Switch } from 'react-router-dom';
 import Layout from './Layout/Layout';
-import Error from '../pages/error/Error';
-import Login from '../pages/login/Login';
+import Error from './ErrorPage';
+import Login from './LoginPage';
 import { useUserState, useUserDispatch } from '../context/UserContext';
 import jwt_decode from 'jwt-decode';
 
