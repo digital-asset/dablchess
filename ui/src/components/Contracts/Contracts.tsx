@@ -1,7 +1,17 @@
 import React from 'react';
 import { CreateEvent } from '@daml/ledger';
 import { useLedger } from '@daml/react';
-import { Button, ButtonGroup, Grid, Table, TableHead, TableRow, TableCell, TableBody } from '@material-ui/core';
+import {
+  Button,
+  ButtonGroup,
+  Grid,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Typography,
+} from '@material-ui/core';
 import {
   ActiveSideOfGame,
   DrawRequest,
@@ -368,10 +378,8 @@ export default function Contracts({
   return (
     <div className="contracts">
       <div className="table-actions">
+        <Typography variant="h2">Game Table</Typography>
         <NewGameButton text="New Game" onClick={() => setOpenNewGameDialog(true)} />
-        <Button onClick={reload}>
-          <Refresh classes={{ root: classes.headerIcon }} /> &nbsp; Refresh
-        </Button>
       </div>
       <Grid container spacing={4}>
         <Grid item xs={12}>

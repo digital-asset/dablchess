@@ -124,7 +124,8 @@ html {
       h4,
       h5,
       p,
-      input {
+      input,
+      .MuiSelect-select.MuiSelect-select {
         color: $text-color;
         font-family: $font-regular;
       }
@@ -144,6 +145,8 @@ html {
         background-color: $light-1;
         border: 1px solid $light-4;
         box-shadow: none;
+        text-transform: lowercase;
+        text-transform: capitalize;
 
         &.MuiIconButton-root {
           border-radius: 4px;

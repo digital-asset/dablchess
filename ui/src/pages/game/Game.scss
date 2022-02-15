@@ -1,10 +1,69 @@
 @mixin game {
   .game {
     margin: $spacing-m;
+
+    &.loading {
+      display: flex;
+      width: 100%;
+      margin-top: 00px;
+      justify-content: center;
+      align-items: center;
+    }
+    .game-heading {
+      display: flex;
+      flex-direction: row;
+      align-items: baseline;
+      a {
+        margin-right: $spacing-m;
+      }
+    }
+
     .game-content {
       display: flex;
       flex-direction: column;
       align-items: center;
+      margin-top: $spacing-m;
+      .game-board {
+        justify-content: space-around;
+        flex-wrap: wrap;
+        width: 80%;
+        background-color: $light-4;
+        padding: $spacing-s;
+        border-radius: 4px;
+      }
+      .game-board,
+      .promote {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        .move {
+          display: flex;
+          flex-direction: column;
+          background-color: $light-1;
+          padding: $spacing-m;
+          border-radius: 4px;
+          width: 250px;
+          height: fit-content;
+        }
+
+        p {
+          margin-bottom: $spacing-m;
+        }
+      }
+      .promote {
+        align-items: baseline;
+        .MuiInput-underline:after,
+        .MuiInput-underline:before {
+          border-bottom: none;
+        }
+        .MuiSelect-select.MuiSelect-select {
+          min-width: 100px;
+          background-color: $light-2;
+          border-radius: 4px;
+          padding: $spacing-xs;
+        }
+      }
     }
   }
 }

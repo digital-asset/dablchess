@@ -1,15 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useStreamQuery } from '@daml/react';
 import { ActiveSideOfGame, PassiveSideOfGame, Move } from '@daml-ts/chess-0.5.0/lib/Chess';
 import { CircularProgress } from '@material-ui/core';
 import Chessboard, { Piece as CPiece, Position } from 'chessboardjsx';
-import { Button, ButtonGroup, Box, IconButton, Dialog, DialogTitle, Typography } from '@material-ui/core';
+import { Button, ButtonGroup, Tooltip, Select, Typography, MenuItem } from '@material-ui/core';
 import { ContractId } from '@daml/types';
 import { useLedger } from '@daml/react';
-import { Coord, Piece, PieceType, Side, SplitGameState } from '@daml-ts/chess-0.5.0/lib/Types';
+import { Coord, Piece, PieceType, Side } from '@daml-ts/chess-0.5.0/lib/Types';
 import { useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
-import { ArrowBack } from '@material-ui/icons';
+import { ArrowBack, Info } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 
 type backgroundColorStyle = {
@@ -37,22 +37,18 @@ function toCoordAndDarkPiece(intCoord: string): [string, boolean] {
   return [coord, darkPiece];
 }
 
-type PromotePieceTypeDialogProp = {
-  open: boolean;
+type PromotePieceTypeProp = {
   setPromotion: any; //(arg0:any) => void
 };
 
-function PromotePieceTypeDialog({ open, setPromotion }: PromotePieceTypeDialogProp) {
+function PromotePieceType({ setPromotion }: PromotePieceTypeProp) {
   return (
-    <Dialog aria-labelledby="simple-dialog-title" open={open} maxWidth="md" fullWidth={true}>
-      <DialogTitle id="simple-dialog-title">Promote pawn to?</DialogTitle>
-      <ButtonGroup>
-        <Button onClick={() => setPromotion(PieceType.Queen)}>Queen</Button>
-        <Button onClick={() => setPromotion(PieceType.Bishop)}>Bishop</Button>
-        <Button onClick={() => setPromotion(PieceType.Knight)}>Knight</Button>
-        <Button onClick={() => setPromotion(PieceType.Rook)}>Rook</Button>
-      </ButtonGroup>
-    </Dialog>
+    <Select onChange={(e) => setPromotion(e.target.value)} placeholder="Promotion">
+      <MenuItem value={'Queen'}>Queen</MenuItem>
+      <MenuItem value={'Bishop'}>Bishop</MenuItem>
+      <MenuItem value={'Knight'}>Knight</MenuItem>
+      <MenuItem value={'Rook'}>Rook</MenuItem>
+    </Select>
   );
 }
 
@@ -76,29 +72,31 @@ export default function Game() {
   const passiveContract = passiveGames.find((c) => c.contractId === decodeURIComponent(contractId));
 
   if (loadingActiveGames || loadingPassiveGames) {
-    return <CircularProgress />;
+    return (
+      <div className="game loading">
+        <CircularProgress color="inherit" />
+      </div>
+    );
   }
 
+  let body = <div>Could not find board...</div>;
+  let title = '';
   if (passiveContract) {
-    return (
-      <div className="game">
-        <BackButton />
-        <PassiveGame contract={passiveContract.payload} contractId={passiveContract.contractId} />;
-      </div>
-    );
+    title = passiveContract.payload.passive.inCheck_ ? 'Check!' : 'Waiting for your turn...';
+    body = <PassiveGame contract={passiveContract.payload} contractId={passiveContract.contractId} />;
   } else if (activeContract) {
-    return (
-      <div className="game">
-        <BackButton />
-        <ActiveGame contract={activeContract.payload} contractId={activeContract.contractId} />
-      </div>
-    );
+    title = activeContract.payload.active.inCheck_ ? 'In check!' : 'Make your move.';
+    body = <ActiveGame contract={activeContract.payload} contractId={activeContract.contractId} />;
   }
 
   return (
     <div className="game">
-      <BackButton />
-      <div>Could not find board...</div>
+      <div className="game-heading">
+        <BackButton />
+        <Typography variant="h2">{title}</Typography>
+        <div></div>
+      </div>
+      {body}
     </div>
   );
 }
@@ -112,11 +110,12 @@ const ActiveGame = (props: { contract: ActiveSideOfGame; contractId: ContractId<
   const { side, active: game } = contract;
 
   const [promote, setPromote] = useState<PieceType | null>(null);
-  const [openPromoteDialog, setOpenPromoteDialog] = useState(false);
+  const [showPromoteDialog, setShowPromoteDialog] = useState(false);
+  const [move, setMove] = useState<{ from: any; to: any }>();
 
   function setPromotion(pt: PieceType): void {
     setPromote(pt);
-    setOpenPromoteDialog(false);
+    setShowPromoteDialog(false);
   }
 
   let squareStyles: Record<string, backgroundColorStyle> = {};
@@ -149,29 +148,39 @@ const ActiveGame = (props: { contract: ActiveSideOfGame; contractId: ContractId<
       (piece === 'bP' && lastRow === 1 && game.side === Side.Black)
     ) {
       console.log('Time to promote!');
-      setOpenPromoteDialog(true);
+      setShowPromoteDialog(true);
+    } else {
+      setShowPromoteDialog(false);
     }
-    const move: Move = { from, to, promote };
-    exerciseMove(contractId, move);
+    const move = { from, to };
+    setMove(move);
   };
-
-  const title = game.inCheck_ ? 'In check!' : 'Make your move.';
 
   return (
     <div className="game-content">
-      <div>
-        <Typography variant="h1">{title}</Typography>
-        <p>{!game.inCheck_ && 'Drag and drop a piece into position.'}</p>
+      <div className="game-board">
+        <div>
+          <p>{!game.inCheck_ && 'Drag and drop a piece into position.'}</p>
+          <GameBoard side={side} allowDrag={true} onDrop={onDrop} position={position} squareStyles={squareStyles} />
+        </div>
+        <div className="move">
+          <p>Move:</p>
+          <p>From {move?.from}</p>
+          <p>To {move?.to}</p>
+          <div>
+            <div className="promote">
+              <p>Promote </p> &nbsp;
+              {showPromoteDialog ? <PromotePieceType setPromotion={setPromotion} /> : promote} &nbsp;
+              <Tooltip title="Pawn promotion occurs when a pawn reaches the farthest rank from its original square—the eighth rank for White and first rank for Black. When this happens, the player can replace the pawn for a queen, a rook, a bishop, or a knight. ">
+                <Info />
+              </Tooltip>
+            </div>
+          </div>
+          <Button disabled={!move} onClick={() => !!move && exerciseMove(contractId, { ...move, promote })}>
+            Submit Move
+          </Button>
+        </div>
       </div>
-      <GameBoard
-        side={side}
-        allowDrag={true}
-        onDrop={onDrop}
-        position={position}
-        setPromotion={setPromotion}
-        openPromoteDialog={openPromoteDialog}
-        squareStyles={squareStyles}
-      />
     </div>
   );
 };
@@ -193,14 +202,8 @@ const PassiveGame = (props: { contract: PassiveSideOfGame; contractId: ContractI
     }
   }
 
-  const title = game.inCheck_ ? 'Check!' : 'Waiting for your turn...';
-
   return (
     <div className="game-content">
-      <div>
-        <Typography variant="h2">{title}</Typography>
-        <p>{!game.inCheck_ && 'Drag and drop a piece into position.'}</p>
-      </div>
       <GameBoard side={side} allowDrag={false} onDrop={(e) => {}} position={position} squareStyles={squareStyles} />
     </div>
   );
@@ -208,19 +211,18 @@ const PassiveGame = (props: { contract: PassiveSideOfGame; contractId: ContractI
 
 const GameBoard = (props: {
   side: Side;
-  setPromotion?: (pt: PieceType) => void;
-  openPromoteDialog?: boolean;
+  showPromoteDialog?: boolean;
   allowDrag: boolean;
   onDrop: ({ sourceSquare, targetSquare, piece }: { sourceSquare: any; targetSquare: any; piece: any }) => void;
   position: Position;
   squareStyles: Record<string, backgroundColorStyle>;
 }) => {
-  const { side, setPromotion, openPromoteDialog, allowDrag, onDrop, position, squareStyles } = props;
+  const { side, allowDrag, onDrop, position, squareStyles } = props;
 
   return (
     <div className="game-board">
-      <PromotePieceTypeDialog open={!!openPromoteDialog} setPromotion={setPromotion} />
       <Chessboard
+        width={400}
         allowDrag={() => allowDrag}
         boardStyle={{ margin: 'auto' }}
         onDrop={onDrop}
