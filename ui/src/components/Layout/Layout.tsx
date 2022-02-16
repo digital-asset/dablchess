@@ -2,7 +2,7 @@ import React from 'react';
 import { Route, Switch, withRouter } from 'react-router-dom';
 import Header from '../Header/Header';
 import GamesTable from '../GamesTable';
-import Game from '../../pages/game/Game';
+import Game from '../Game';
 import DamlLedger from '@daml/react';
 import { useUserState } from '../../context/UserContext';
 import { AliasMapProvider } from '../../context/AliasMapContext';

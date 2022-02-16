@@ -23,7 +23,6 @@ import {
 import { Side } from '@daml-ts/chess-0.5.0/lib/Types';
 import { useUserState } from '../../context/UserContext';
 import { useAliasMaps } from '../../context/AliasMapContext';
-import { useReload } from '@daml/react';
 import NewGameDialog from '../NewGameDialog';
 import { useHistory } from 'react-router-dom';
 
@@ -197,6 +196,7 @@ function PassiveSideOfGameRow({ createPs }: PassiveSideOfGameRowProp) {
 
   const ledger = useLedger();
   const aliasMap = useAliasMaps();
+  const history = useHistory();
 
   async function requestDraw() {
     console.log('requesting a draw, passive' + createPs.contractId);
@@ -218,26 +218,21 @@ function PassiveSideOfGameRow({ createPs }: PassiveSideOfGameRowProp) {
     console.log(`After surrendering ${JSON.stringify(choiceReturnValue)} ${JSON.stringify(events)}`);
   }
 
-  const [openChessBoard, setOpenChessBoard] = React.useState(false);
-
-  function handleClose() {
-    setOpenChessBoard(false);
-  }
-
   function onClick() {
-    setOpenChessBoard(true);
+    history.push(`/app/game/${encodeURIComponent(createPs.contractId)}`);
   }
 
   const opponent_ = opponent(pp.game, pp.player); // Ideally this should be userState.party, but we'll save a React state.
   return (
     <>
-      <TableRow className="tableRow" onClick={onClick}>
+      <TableRow className="tableRow">
         <GameIdCell id={pp.game.gameId} />
         <SideCell side={side(pp.game, pp.player)} />
         <OpponentCell opponent={aliasMap.toAlias(opponent_)} />
         <StatusCell status={`Waiting for ${aliasMap.toAlias(opponent_)}'s move...`} />
         <TableCell className="tableCell" align="right">
           <ButtonGroup>
+            <MyButton text="View Board" onClick={onClick} />
             <MyButton text="Request Draw" onClick={requestDraw} />
             <MyButton text="Surrender" onClick={surrender} />
           </ButtonGroup>
@@ -363,7 +358,6 @@ export default function Contracts({
   drawRequests,
   gameResults,
 }: ContractsProp<any, any>) {
-  const reload = useReload();
   const tableIsEmpty =
     gameProposals.length === 0 &&
     activeGames.length === 0 &&

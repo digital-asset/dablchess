@@ -1,6 +1,6 @@
 @mixin contracts {
   .contracts {
-    margin: $spacing-m;
+    margin: $spacing-m $spacing-l;
 
     .table-actions {
       width: 100%;
@@ -47,14 +47,13 @@
       }
     }
 
-    .tableCell {
-      vertical-align: 'top';
-      padding-top: 6;
-      padding-bottom: 6;
-      font-size: '0.75rem';
-    }
     .tableRow {
       height: 'auto';
+      .tableCell {
+        vertical-align: 'top';
+        padding-top: 6;
+        padding-bottom: 6;
+      }
     }
     .textField {
       font-size: '0.75rem';
