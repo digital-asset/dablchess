@@ -41,7 +41,7 @@ function Login({ history }: RouteComponentProps<any>) {
                 >
                   Log in with Daml Hub
                 </Button>
-                <Typography>OR</Typography>
+                <p>or</p>
               </>
             )}
             <TextField

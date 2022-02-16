@@ -39,6 +39,9 @@
     }
     .form {
       width: 320;
+       p {
+           color: white;
+       }
     }
     .tab {
       font-weight: 400;
@@ -102,7 +105,6 @@
       width: 100%;
       margin-top: $spacing-m;
       display: flex;
-      justify-content: space-between;
       align-items: center;
     }
     .forgetButton {
