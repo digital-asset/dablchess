@@ -173,7 +173,7 @@ function ActiveSideOfGameRow({ createAs }: ActiveSideofGameRowProp) {
         <SideCell side={ap.side} />
         <OpponentCell opponent={aliasMap.toAlias(opponent(ap.game, ap.player))} />
         <StatusCell />
-        <TableCell className="tableCell " align="right">
+        <TableCell className="tableCell" align="right">
           <ButtonGroup>
             <MyButton text="Move" onClick={move} />
             <MyButton text="Claim Draw" onClick={claimDraw} />
@@ -230,7 +230,7 @@ function PassiveSideOfGameRow({ createPs }: PassiveSideOfGameRowProp) {
         <SideCell side={side(pp.game, pp.player)} />
         <OpponentCell opponent={aliasMap.toAlias(opponent_)} />
         <StatusCell status={`Waiting for ${aliasMap.toAlias(opponent_)}'s move...`} />
-        <TableCell className="tableCell " align="right">
+        <TableCell className="tableCell" align="right">
           <ButtonGroup>
             <MyButton text="View Board" onClick={onClick} />
             <MyButton text="Request Draw" onClick={requestDraw} />
