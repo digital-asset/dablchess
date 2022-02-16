@@ -1,5 +1,5 @@
 import React from 'react';
-import logo from '../pages/login/logo.svg';
+import logo from './logo.svg';
 
 export const Logo = (props: { size?: 'small' }) => {
   let sizeParams = {

@@ -57,7 +57,7 @@ const visibleLightStyle: backgroundColorStyle = { backgroundColor: 'rgb(210, 189
 
 const BackButton = () => {
   return (
-    <Button component={Link} to="/">
+    <Button className="back-button" component={Link} to="/">
       <ArrowBack /> &nbsp; Back to Game Table
     </Button>
   );
@@ -91,11 +91,8 @@ export default function Game() {
 
   return (
     <div className="game">
-      <div className="game-heading">
-        <BackButton />
-        <Typography variant="h2">{title}</Typography>
-        <div></div>
-      </div>
+      <BackButton />
+      <p>{title}</p>
       {body}
     </div>
   );
@@ -158,28 +155,26 @@ const ActiveGame = (props: { contract: ActiveSideOfGame; contractId: ContractId<
 
   return (
     <div className="game-content">
-      <div className="game-board">
+      <div className="chess-board-wrapper">
+        <p>{!game.inCheck_ && 'Drag and drop a piece into position.'}</p>
+        <GameBoard side={side} allowDrag={true} onDrop={onDrop} position={position} squareStyles={squareStyles} />
+      </div>
+      <div className="move-wrapper">
+        <p className="move">Move</p>
+        <p>From: {move?.from}</p>
+        <p>To: {move?.to}</p>
         <div>
-          <p>{!game.inCheck_ && 'Drag and drop a piece into position.'}</p>
-          <GameBoard side={side} allowDrag={true} onDrop={onDrop} position={position} squareStyles={squareStyles} />
-        </div>
-        <div className="move">
-          <p>Move:</p>
-          <p>From {move?.from}</p>
-          <p>To {move?.to}</p>
-          <div>
-            <div className="promote">
-              <p>Promote </p> &nbsp;
-              {showPromoteDialog ? <PromotePieceType setPromotion={setPromotion} /> : promote} &nbsp;
-              <Tooltip title="Pawn promotion occurs when a pawn reaches the farthest rank from its original square—the eighth rank for White and first rank for Black. When this happens, the player can replace the pawn for a queen, a rook, a bishop, or a knight. ">
-                <Info />
-              </Tooltip>
-            </div>
+          <div className="promote">
+            <Tooltip title="Pawn promotion occurs when a pawn reaches the farthest rank from its original square—the eighth rank for White and first rank for Black. When this happens, the player can replace the pawn for a queen, a rook, a bishop, or a knight. ">
+              <Info />
+            </Tooltip>
+            &nbsp;<p>Promote: </p>
+            {showPromoteDialog ? <PromotePieceType setPromotion={setPromotion} /> : promote} &nbsp;
           </div>
-          <Button disabled={!move} onClick={() => !!move && exerciseMove(contractId, { ...move, promote })}>
-            Submit Move
-          </Button>
         </div>
+        <Button disabled={!move} onClick={() => !!move && exerciseMove(contractId, { ...move, promote })}>
+          Submit Move
+        </Button>
       </div>
     </div>
   );
