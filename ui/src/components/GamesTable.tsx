@@ -1,5 +1,5 @@
 import React from 'react';
-import Contracts from '../../components/Contracts/Contracts';
+import Contracts from './Contracts/Contracts';
 import { useStreamQuery } from '@daml/react';
 import {
   ActiveSideOfGame,

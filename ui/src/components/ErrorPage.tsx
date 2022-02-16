@@ -1,14 +1,13 @@
 import React from 'react';
 import { Grid, Paper, Typography, Button, AppBar, Toolbar } from '@material-ui/core';
 import { Link } from 'react-router-dom';
-import { Logo } from '../../components/Logo';
-import { classes } from '../../components/classes';
+import { Logo } from './Logo';
 
 export default function Error() {
   return (
-    <Grid container className={'error-page'}>
-      <AppBar position={'static'} className={'header-nav'}>
-        <Toolbar className={classes.toolbar}>
+    <Grid container className="error-page">
+      <AppBar position={'static'} className="header-nav">
+        <Toolbar className="toolbar">
           <div className="header-info">
             <Logo size="small" />
             <div className="app-info">
