@@ -75,6 +75,7 @@ export default function Game() {
     return (
       <div className="game loading">
         <CircularProgress color="inherit" />
+        <p>Loading game...</p>
       </div>
     );
   }
