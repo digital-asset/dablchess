@@ -1,6 +1,6 @@
 catalog:
   name: daml-chess
-  version: 1.0.2
+  version: 1.0.3
   short_description: Daml Chess
   description: A Fog-of-War variant of chess.
   author: Digital Asset (Switzerland) GmbH

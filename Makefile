@@ -102,7 +102,7 @@ $(dar): $(target_dir) $(daml_build_log)
 	cp .daml/dist/chess-$(dar_version).dar $@
 
 $(bot): $(target_dir) $(operator_bot_dir)
-	cp operator_bot/dist/bot-1.0.0.tar.gz $@
+	cp operator_bot/dist/bot-1.0.3.tar.gz $@
 
 $(ui): $(target_dir) $(yarn_build_log)
 	cd ui && yarn build

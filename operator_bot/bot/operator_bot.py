@@ -8,20 +8,20 @@ from dazl import create, exercise, exercise_by_key
 
 dazl.setup_default_logger(logging.INFO)
 
-
+package_id = '855c1f41d53895ab32b38e04be926fd03d079b372a74edec2b525bab7c00bbd8'
 class CHESS:
-    GameAccept = 'Chess:GameAccept'
-    Game = 'Chess:Game'
-    OperatorRole = 'Chess:OperatorRole'
-    ActiveMove = 'Chess:ActiveMove'
-    ActiveDrawClaim = 'Chess:ActiveDrawClaim'
-    EndGameProposal = 'Chess:EndGameProposal'
-    AcceptedDrawRequest = 'Chess:AcceptedDrawRequest'
-    RejectedDrawRequest = 'Chess:RejectedDrawRequest'
+    GameAccept = f'{package_id}:Chess:GameAccept'
+    Game = f'{package_id}:Chess:Game'
+    OperatorRole = f'{package_id}:Chess:OperatorRole'
+    ActiveMove = f'{package_id}:Chess:ActiveMove'
+    ActiveDrawClaim = f'{package_id}:Chess:ActiveDrawClaim'
+    EndGameProposal = f'{package_id}:Chess:EndGameProposal'
+    AcceptedDrawRequest = f'{package_id}:Chess:AcceptedDrawRequest'
+    RejectedDrawRequest = f'{package_id}:Chess:RejectedDrawRequest'
 
 class ALIAS:
-    Aliases = 'Alias:Aliases'
-    AliasRequest = 'Alias:AliasRequest'
+    Aliases = f'{package_id}:Alias:Aliases'
+    AliasRequest = f'{package_id}:Alias:AliasRequest'
 
 def main():
     url = os.getenv('DAML_LEDGER_URL')
