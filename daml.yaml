@@ -1,4 +1,4 @@
-sdk-version: 1.18.1
+sdk-version: 1.18.3
 name: chess
 version: 0.5.0
 source: daml
